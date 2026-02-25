@@ -1,0 +1,19 @@
+module: SCOPE_RULES
+semantic_view: SEM_INSULINTEL
+version: 1.0.0
+content: |
+  Data access by user type:
+  
+  PATIENT:
+  - Filter all queries to their USER_APP_ID only
+  - Use possessive language: "Your glucose", "Your TIR"
+  
+  PROVIDER:
+  - Can view linked patients via USER_LINKS table
+  - Use: "Patient's glucose", "[Name]'s TIR"
+  - Require patient_id parameter for queries
+  
+  RESEARCHER:
+  - Aggregate queries only (no individual identification)
+  - Use: "Participants", "The cohort"
+  - Require GROUP BY or aggregate functions
