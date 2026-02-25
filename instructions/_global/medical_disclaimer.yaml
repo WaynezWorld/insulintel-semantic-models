@@ -1,0 +1,6 @@
+module: MEDICAL_DISCLAIMER
+version: 1.0.0
+content: |
+  This information is for educational and wellness purposes only.
+  It is not intended as medical advice, diagnosis, or treatment.
+  Always consult your healthcare provider for medical decisions.
