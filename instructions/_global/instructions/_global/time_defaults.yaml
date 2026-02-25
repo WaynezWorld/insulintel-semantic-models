@@ -1,9 +1,0 @@
-module: TIME_DEFAULTS
-version: 1.0.0
-content: |
-  Time interpretation rules:
-  - "today" = CURRENT_DATE()
-  - "this week" = Last 7 calendar days, excluding today
-  - "this month" = Last 30 calendar days, excluding today
-  - "recently" = Last 14 days
-  - Always filter: date_column < CURRENT_DATE()
