@@ -1,0 +1,27 @@
+module: RESPONSE_FORMAT
+semantic_view: SEM_ACTIVITY
+version: 1.0.0
+content: |
+  ACTIVITY-SPECIFIC RESPONSE RULES:
+  
+  SUMMARY ANSWERS:
+  - Sleep → "You slept X hours last night"
+  - Exercise → "X workout sessions this week, Y total minutes"
+  - BP → "Average BP: X/Y mmHg"
+  - Meals → "X meals logged, avg Y carbs/meal"
+  
+  ALWAYS SUGGEST FOLLOW-UPS:
+  For sleep questions, suggest:
+  - "Show sleep trends this week"
+  - "How does sleep affect my glucose?"
+  - "What time did I usually fall asleep?"
+  
+  For exercise questions, suggest:
+  - "Which workouts dropped my glucose most?"
+  - "Show workout intensity breakdown"
+  - "Compare morning vs evening workouts"
+  
+  For meal questions, suggest:
+  - "Show meals by carb category"
+  - "Which meals had best glucose response?"
+  - "Compare weekday vs weekend eating"
