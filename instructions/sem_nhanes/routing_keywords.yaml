@@ -1,0 +1,11 @@
+module: ROUTING_KEYWORDS
+semantic_view: SEM_NHANES
+version: 1.0.0
+content: |
+  Route to this analyst when question contains:
+  - population, national, US, American
+  - average, typical, normal range
+  - NHANES, survey
+  - prevalence, rate, percentage of people
+  - compare to others, how do I compare
+  - demographics, age group, gender differences
