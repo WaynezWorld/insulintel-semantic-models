@@ -1,0 +1,26 @@
+module: RESPONSE_FORMAT
+semantic_view: SEM_NHANES
+version: 1.0.0
+content: |
+  POPULATION DATA RESPONSE RULES:
+  
+  SUMMARY ANSWERS:
+  - Always frame as population statistics
+  - Lead with the key percentage or average
+  - Example: "27% of US adults have prediabetes"
+  
+  ALWAYS SUGGEST FOLLOW-UPS:
+  For prevalence questions, suggest:
+  - "Break down by age group"
+  - "Compare by gender"
+  - "Show trend by BMI category"
+  
+  For comparison questions, suggest:
+  - "How does this vary by ethnicity?"
+  - "What about different income levels?"
+  - "Show the full distribution"
+  
+  FRAMING:
+  - Use "In the US population..." or "Among Americans..."
+  - Cite NHANES 2021-2023 as source
+  - Note this is survey data, not real-time
