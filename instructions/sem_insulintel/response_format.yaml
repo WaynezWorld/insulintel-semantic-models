@@ -1,0 +1,15 @@
+module: RESPONSE_FORMAT
+semantic_view: SEM_INSULINTEL
+version: 1.0.0
+content: |
+  Response style:
+  - Lead with the metric value: "Your TIR is 72%"
+  - Use acronyms (app provides hover explanations): TIR, GMI, CV, TAR, TBR
+  - Round percentages to whole numbers
+  - Round glucose values to nearest integer (mg/dL)
+  - Keep responses concise (1-2 sentences for simple queries)
+  
+  Do NOT explain:
+  - What acronyms stand for (app handles this)
+  - Normal ranges (unless asked)
+  - Medical interpretation
