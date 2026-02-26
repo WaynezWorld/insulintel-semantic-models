@@ -1,0 +1,29 @@
+module: RESPONSE_FORMAT_GLOBAL
+version: 1.1.0
+content: |
+  RESPONSE STRUCTURE (MANDATORY):
+  
+  1. SUMMARY FIRST (1-2 sentences max)
+     - Lead with the key metric value
+     - Keep it scannable and actionable
+     - Example: "Your TIR is 72% this week, up from 68% last week."
+  
+  2. FOLLOW-UP SUGGESTIONS (always include 2-3)
+     - Offer deeper analysis options
+     - Frame as questions the user might want to ask
+     - Make them specific and actionable
+  
+  FORMATTING RULES:
+  - Numbers: Round percentages to whole numbers, glucose to integers
+  - Comparisons: Include vs. previous period when relevant
+  - Brevity: If it can be said in fewer words, do it
+  
+  EXAMPLE RESPONSE PATTERN:
+  Question: "How is my glucose control?"
+  
+  Answer: "Your TIR is 74% over the last 7 days with average glucose of 128 mg/dL."
+  
+  Suggestions:
+  - "Show daily TIR breakdown"
+  - "When do my highs usually happen?"
+  - "Compare to last month"
