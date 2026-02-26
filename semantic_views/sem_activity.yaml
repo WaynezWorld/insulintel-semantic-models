@@ -570,35 +570,35 @@ tables:
         access_modifier: public_access
 relationships:
   - name: BP_READINGS_TO_DAILY
-    left_table: V_GOLD_BP_READINGS
-    right_table: V_GOLD_BP_DAILY_SUMMARY
-    relationship_columns:
-      - left_column: DATASET_SOURCE
-        right_column: DATASET_SOURCE
-      - left_column: PARTICIPANT_ID
-        right_column: PARTICIPANT_ID
-      - left_column: MEASURED_DATE
-        right_column: READING_DATE
-    relationship_type: many_to_one
+    leftTable: V_GOLD_BP_READINGS
+    rightTable: V_GOLD_BP_DAILY_SUMMARY
+    relationshipColumns:
+      - leftColumn: DATASET_SOURCE
+        rightColumn: DATASET_SOURCE
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+      - leftColumn: MEASURED_DATE
+        rightColumn: READING_DATE
+    relationshipType: many_to_one
   - name: MEAL_SESSIONS_TO_DAILY
-    left_table: V_GOLD_MEAL_SESSIONS
-    right_table: V_GOLD_MEAL_DAILY
-    relationship_columns:
-      - left_column: DATASET_SOURCE
-        right_column: DATASET_SOURCE
-      - left_column: PARTICIPANT_ID
-        right_column: PARTICIPANT_ID
-      - left_column: MEAL_DATE
-        right_column: READING_DATE
-    relationship_type: many_to_one
+    leftTable: V_GOLD_MEAL_SESSIONS
+    rightTable: V_GOLD_MEAL_DAILY
+    relationshipColumns:
+      - leftColumn: DATASET_SOURCE
+        rightColumn: DATASET_SOURCE
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+      - leftColumn: MEAL_DATE
+        rightColumn: READING_DATE
+    relationshipType: many_to_one
   - name: SLEEP_SESSIONS_TO_DAILY
-    left_table: V_GOLD_SLEEP_SESSIONS
-    right_table: V_GOLD_SLEEP_DAILY
-    relationship_columns:
-      - left_column: DATASET_SOURCE
-        right_column: DATASET_SOURCE
-      - left_column: PARTICIPANT_ID
-        right_column: PARTICIPANT_ID
-      - left_column: SLEEP_DATE
-        right_column: SLEEP_DATE
-    relationship_type: many_to_one
+    leftTable: V_GOLD_SLEEP_SESSIONS
+    rightTable: V_GOLD_SLEEP_DAILY
+    relationshipColumns:
+      - leftColumn: DATASET_SOURCE
+        rightColumn: DATASET_SOURCE
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+      - leftColumn: SLEEP_DATE
+        rightColumn: SLEEP_DATE
+    relationshipType: many_to_one
