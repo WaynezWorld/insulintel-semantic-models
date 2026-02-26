@@ -1,0 +1,292 @@
+name: SEM_NHANES
+description: "NHANES 2021-2023 population health analytics semantic model linking raw metabolic data with derived analytics summaries."
+
+tables:
+  - name: V_NHANES_METABOLIC_2021_2023
+    description: "NHANES 2021-2023 unified metabolic dataset. ~11K participants with demographics, body measures, glycemic markers, lipids, and blood pressure."
+    base_table:
+      database: DB_INSULINTEL
+      schema: SCH_SEMANTIC
+      table: V_NHANES_METABOLIC_2021_2023
+    primary_key:
+      columns:
+        - SEQN
+    unique_keys:
+      - columns:
+          - PARTICIPANT_ID
+    dimensions:
+      - name: PARTICIPANT_ID
+        description: "Participant identifier (SEQN cast to VARCHAR)"
+        expr: "TO_VARCHAR(SEQN)"
+        data_type: VARCHAR
+      - name: SEQN
+        description: "NHANES sequence number"
+        expr: SEQN
+        data_type: NUMBER
+      - name: SURVEY_CYCLE
+        expr: SURVEY_CYCLE
+        data_type: VARCHAR
+      - name: SURVEY_YEAR_MID
+        expr: SURVEY_YEAR_MID
+        data_type: NUMBER
+      - name: AGE_YEARS
+        expr: AGE_YEARS
+        data_type: NUMBER
+      - name: SEX_CODE
+        expr: SEX_CODE
+        data_type: NUMBER
+      - name: RACE_ETHNICITY_CODE
+        expr: RACE_ETHNICITY_CODE
+        data_type: NUMBER
+      - name: EDUCATION_CODE
+        expr: EDUCATION_CODE
+        data_type: NUMBER
+      - name: STRATA
+        expr: STRATA
+        data_type: NUMBER
+      - name: PSU
+        expr: PSU
+        data_type: NUMBER
+      - name: HAS_BODY_MEASURES
+        expr: HAS_BODY_MEASURES
+        data_type: NUMBER
+      - name: HAS_HBA1C
+        expr: HAS_HBA1C
+        data_type: NUMBER
+      - name: HAS_FASTING_GLUCOSE
+        expr: HAS_FASTING_GLUCOSE
+        data_type: NUMBER
+      - name: HAS_FASTING_INSULIN
+        expr: HAS_FASTING_INSULIN
+        data_type: NUMBER
+      - name: HAS_LIPIDS
+        expr: HAS_LIPIDS
+        data_type: NUMBER
+      - name: HAS_BLOOD_PRESSURE
+        expr: HAS_BLOOD_PRESSURE
+        data_type: NUMBER
+    facts:
+      - name: BMI
+        expr: BMI
+        data_type: FLOAT
+      - name: WEIGHT_KG
+        expr: WEIGHT_KG
+        data_type: FLOAT
+      - name: HEIGHT_CM
+        expr: HEIGHT_CM
+        data_type: FLOAT
+      - name: WAIST_CIRCUMFERENCE_CM
+        expr: WAIST_CIRCUMFERENCE_CM
+        data_type: FLOAT
+      - name: HIP_CIRCUMFERENCE_CM
+        expr: HIP_CIRCUMFERENCE_CM
+        data_type: FLOAT
+      - name: HBA1C_PCT
+        expr: HBA1C_PCT
+        data_type: FLOAT
+      - name: FASTING_GLUCOSE_MGDL
+        expr: FASTING_GLUCOSE_MGDL
+        data_type: FLOAT
+      - name: FASTING_INSULIN_UU_ML
+        expr: FASTING_INSULIN_UU_ML
+        data_type: FLOAT
+      - name: TOTAL_CHOLESTEROL_MGDL
+        expr: TOTAL_CHOLESTEROL_MGDL
+        data_type: FLOAT
+      - name: HDL_CHOLESTEROL_MGDL
+        expr: HDL_CHOLESTEROL_MGDL
+        data_type: FLOAT
+      - name: LDL_CHOLESTEROL_MGDL
+        expr: LDL_CHOLESTEROL_MGDL
+        data_type: FLOAT
+      - name: TRIGLYCERIDES_MGDL
+        expr: TRIGLYCERIDES_MGDL
+        data_type: FLOAT
+      - name: SBP_MEAN_MMHG
+        expr: SBP_MEAN_MMHG
+        data_type: FLOAT
+      - name: DBP_MEAN_MMHG
+        expr: DBP_MEAN_MMHG
+        data_type: FLOAT
+      - name: POVERTY_INCOME_RATIO
+        expr: POVERTY_INCOME_RATIO
+        data_type: FLOAT
+      - name: MEC_WEIGHT_2YR
+        expr: MEC_WEIGHT_2YR
+        data_type: FLOAT
+      - name: INTERVIEW_WEIGHT_2YR
+        expr: INTERVIEW_WEIGHT_2YR
+        data_type: FLOAT
+      - name: FASTING_WEIGHT_2YR
+        expr: FASTING_WEIGHT_2YR
+        data_type: FLOAT
+
+  - name: V_GOLD_NHANES_METABOLIC_SUMMARY
+    description: "NHANES 2021-2023 population metabolic analytics with glycemic status, lipid risk categories, HOMA-IR, and metabolic syndrome."
+    base_table:
+      database: WELLNESS_DEV
+      schema: GOLD
+      table: V_GOLD_NHANES_METABOLIC_SUMMARY
+    primary_key:
+      columns:
+        - PARTICIPANT_ID
+    dimensions:
+      - name: PARTICIPANT_ID
+        expr: PARTICIPANT_ID
+        data_type: VARCHAR
+      - name: DATA_SOURCE
+        expr: DATA_SOURCE
+        data_type: VARCHAR
+      - name: SURVEY_CYCLE_NAME
+        expr: SURVEY_CYCLE_NAME
+        data_type: VARCHAR
+      - name: SURVEY_YEARS
+        expr: SURVEY_YEARS
+        data_type: VARCHAR
+      - name: AGE_YEARS
+        expr: AGE_YEARS
+        data_type: NUMBER
+      - name: AGE_GROUP
+        expr: AGE_GROUP
+        data_type: VARCHAR
+      - name: GENDER
+        expr: GENDER
+        data_type: VARCHAR
+      - name: RACE_ETHNICITY
+        expr: RACE_ETHNICITY
+        data_type: VARCHAR
+      - name: BMI_CATEGORY
+        expr: BMI_CATEGORY
+        data_type: VARCHAR
+      - name: BP_CATEGORY
+        expr: BP_CATEGORY
+        data_type: VARCHAR
+      - name: GLYCEMIC_STATUS
+        expr: GLYCEMIC_STATUS
+        data_type: VARCHAR
+      - name: A1C_RISK_BAND
+        expr: A1C_RISK_BAND
+        data_type: VARCHAR
+      - name: HOMA_IR_CATEGORY
+        expr: HOMA_IR_CATEGORY
+        data_type: VARCHAR
+      - name: TOTAL_CHOL_CATEGORY
+        expr: TOTAL_CHOL_CATEGORY
+        data_type: VARCHAR
+      - name: LDL_CATEGORY
+        expr: LDL_CATEGORY
+        data_type: VARCHAR
+      - name: HDL_CATEGORY
+        expr: HDL_CATEGORY
+        data_type: VARCHAR
+      - name: TRIGLYCERIDES_CATEGORY
+        expr: TRIGLYCERIDES_CATEGORY
+        data_type: VARCHAR
+      - name: HAS_METABOLIC_SYNDROME
+        expr: HAS_METABOLIC_SYNDROME
+        data_type: NUMBER
+      - name: HAS_GLYCEMIC_DATA
+        expr: HAS_GLYCEMIC_DATA
+        data_type: NUMBER
+      - name: HAS_LIPID_DATA
+        expr: HAS_LIPID_DATA
+        data_type: NUMBER
+      - name: HAS_INSULIN_DATA
+        expr: HAS_INSULIN_DATA
+        data_type: NUMBER
+      - name: HAS_BP_DATA
+        expr: HAS_BP_DATA
+        data_type: NUMBER
+      - name: DATA_COMPLETENESS_SCORE
+        expr: DATA_COMPLETENESS_SCORE
+        data_type: NUMBER
+    facts:
+      - name: BMI
+        expr: BMI
+        data_type: FLOAT
+      - name: WEIGHT_KG
+        expr: WEIGHT_KG
+        data_type: FLOAT
+      - name: HEIGHT_CM
+        expr: HEIGHT_CM
+        data_type: FLOAT
+      - name: WAIST_CIRCUMFERENCE_CM
+        expr: WAIST_CIRCUMFERENCE_CM
+        data_type: FLOAT
+      - name: HBA1C_PCT
+        expr: HBA1C_PCT
+        data_type: FLOAT
+      - name: FASTING_GLUCOSE_MGDL
+        expr: FASTING_GLUCOSE_MGDL
+        data_type: FLOAT
+      - name: FASTING_INSULIN_UU_ML
+        expr: FASTING_INSULIN_UU_ML
+        data_type: FLOAT
+      - name: HOMA_IR
+        expr: HOMA_IR
+        data_type: FLOAT
+      - name: TOTAL_CHOLESTEROL_MGDL
+        expr: TOTAL_CHOLESTEROL_MGDL
+        data_type: FLOAT
+      - name: HDL_CHOLESTEROL_MGDL
+        expr: HDL_CHOLESTEROL_MGDL
+        data_type: FLOAT
+      - name: LDL_CHOLESTEROL_MGDL
+        expr: LDL_CHOLESTEROL_MGDL
+        data_type: FLOAT
+      - name: NON_HDL_CHOLESTEROL_MGDL
+        expr: NON_HDL_CHOLESTEROL_MGDL
+        data_type: FLOAT
+      - name: TRIGLYCERIDES_MGDL
+        expr: TRIGLYCERIDES_MGDL
+        data_type: FLOAT
+      - name: SBP_MEAN_MMHG
+        expr: SBP_MEAN_MMHG
+        data_type: FLOAT
+      - name: DBP_MEAN_MMHG
+        expr: DBP_MEAN_MMHG
+        data_type: FLOAT
+      - name: METABOLIC_SYNDROME_RISK_FACTORS
+        expr: METABOLIC_SYNDROME_RISK_FACTORS
+        data_type: NUMBER
+      - name: FASTING_HOURS
+        expr: FASTING_HOURS
+        data_type: FLOAT
+      - name: SAMPLE_WEIGHT
+        expr: SAMPLE_WEIGHT
+        data_type: FLOAT
+    metrics:
+      - name: PARTICIPANT_COUNT
+        description: "Total unique participants"
+        expr: "COUNT(DISTINCT PARTICIPANT_ID)"
+        data_type: NUMBER
+      - name: AVG_BMI
+        description: "Average BMI"
+        expr: "AVG(BMI)"
+        data_type: FLOAT
+      - name: AVG_HBA1C
+        description: "Average HbA1c"
+        expr: "AVG(HBA1C_PCT)"
+        data_type: FLOAT
+      - name: PREDIABETES_RATE
+        description: "Prediabetes percentage"
+        expr: "100.0 * SUM(CASE WHEN GLYCEMIC_STATUS = 'Prediabetes' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)"
+        data_type: FLOAT
+      - name: DIABETES_RATE
+        description: "Diabetes percentage"
+        expr: "100.0 * SUM(CASE WHEN GLYCEMIC_STATUS = 'Diabetes' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)"
+        data_type: FLOAT
+      - name: METABOLIC_SYNDROME_RATE
+        description: "Metabolic syndrome percentage"
+        expr: "100.0 * SUM(HAS_METABOLIC_SYNDROME) / NULLIF(COUNT(*), 0)"
+        data_type: FLOAT
+
+relationships:
+  - name: SUMMARY_TO_RAW
+    description: "Links summary to raw NHANES data"
+    left_table: V_GOLD_NHANES_METABOLIC_SUMMARY
+    right_table: V_NHANES_METABOLIC_2021_2023
+    relationship_columns:
+      - left_column: PARTICIPANT_ID
+        right_column: PARTICIPANT_ID
+    relationship_type: one_to_one
