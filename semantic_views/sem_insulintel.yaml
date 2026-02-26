@@ -1,5 +1,6 @@
 name: SEM_INSULINTEL
 description: CGM-focused semantic model for continuous glucose monitoring analytics. Covers glucose readings, time-in-range metrics, glucose episodes, and post-meal glucose response. Wellness/education only - not for diagnosis or treatment.
+
 tables:
   - name: V_GLD_WORKOUTS_DIABETES_SESSIONS
     description: Exercise sessions with glucose context.
@@ -318,3 +319,38 @@ tables:
       - name: TIME_IN_RANGE_PCT
         expr: TIME_IN_RANGE_PCT
         data_type: FLOAT
+
+relationships:
+  - name: EPISODES_TO_DAILY
+    leftTable: V_GOLD_GLUCOSE_EPISODES
+    rightTable: V_GOLD_GLUCOSE_DAILY_SUMMARY
+    relationshipColumns:
+      - leftColumn: DATASET_SOURCE
+        rightColumn: DATASET_SOURCE
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+      - leftColumn: EPISODE_DATE
+        rightColumn: READING_DATE
+    relationshipType: many_to_one
+
+  - name: MEALS_TO_DAILY
+    leftTable: V_GOLD_MEAL_POSTMEAL
+    rightTable: V_GOLD_GLUCOSE_DAILY_SUMMARY
+    relationshipColumns:
+      - leftColumn: DATASET_SOURCE
+        rightColumn: DATASET_SOURCE
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+    relationshipType: many_to_one
+
+  - name: TIR_TO_DAILY
+    leftTable: V_GOLD_TIR_ROLLUPS
+    rightTable: V_GOLD_GLUCOSE_DAILY_SUMMARY
+    relationshipColumns:
+      - leftColumn: DATASET_SOURCE
+        rightColumn: DATASET_SOURCE
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+      - leftColumn: WINDOW_DATE
+        rightColumn: READING_DATE
+    relationshipType: many_to_one
