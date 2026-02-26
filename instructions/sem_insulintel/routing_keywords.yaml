@@ -1,0 +1,14 @@
+module: ROUTING_KEYWORDS
+semantic_view: SEM_INSULINTEL
+version: 1.0.0
+content: |
+  Route to this analyst when question contains:
+  - glucose, sugar, blood sugar
+  - CGM, continuous glucose
+  - TIR, time in range, time-in-range
+  - hypo, hypoglycemia, low blood sugar
+  - hyper, hyperglycemia, high blood sugar
+  - A1C, HbA1c, GMI
+  - spike, crash, dip
+  - fasting glucose, morning glucose
+  - post-meal, after eating
