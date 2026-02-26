@@ -1,0 +1,11 @@
+module: ROUTING_KEYWORDS
+semantic_view: SEM_ACTIVITY
+version: 1.0.0
+content: |
+  Route to this analyst when question contains:
+  - sleep, slept, sleeping, rest
+  - exercise, workout, activity, steps, walking, running
+  - meal, food, ate, eating, breakfast, lunch, dinner
+  - blood pressure, BP, systolic, diastolic
+  - heart rate, HR, pulse
+  - calories, burned, active energy
