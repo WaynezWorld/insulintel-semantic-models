@@ -333,16 +333,6 @@ relationships:
         rightColumn: READING_DATE
     relationshipType: many_to_one
 
-  - name: MEALS_TO_DAILY
-    leftTable: V_GOLD_MEAL_POSTMEAL
-    rightTable: V_GOLD_GLUCOSE_DAILY_SUMMARY
-    relationshipColumns:
-      - leftColumn: DATASET_SOURCE
-        rightColumn: DATASET_SOURCE
-      - leftColumn: PARTICIPANT_ID
-        rightColumn: PARTICIPANT_ID
-    relationshipType: many_to_one
-
   - name: TIR_TO_DAILY
     leftTable: V_GOLD_TIR_ROLLUPS
     rightTable: V_GOLD_GLUCOSE_DAILY_SUMMARY
