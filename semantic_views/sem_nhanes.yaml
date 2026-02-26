@@ -259,34 +259,27 @@ tables:
       - name: PARTICIPANT_COUNT
         description: "Total unique participants"
         expr: "COUNT(DISTINCT PARTICIPANT_ID)"
-        data_type: NUMBER
       - name: AVG_BMI
         description: "Average BMI"
         expr: "AVG(BMI)"
-        data_type: FLOAT
       - name: AVG_HBA1C
         description: "Average HbA1c"
         expr: "AVG(HBA1C_PCT)"
-        data_type: FLOAT
       - name: PREDIABETES_RATE
         description: "Prediabetes percentage"
         expr: "100.0 * SUM(CASE WHEN GLYCEMIC_STATUS = 'Prediabetes' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)"
-        data_type: FLOAT
       - name: DIABETES_RATE
         description: "Diabetes percentage"
         expr: "100.0 * SUM(CASE WHEN GLYCEMIC_STATUS = 'Diabetes' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)"
-        data_type: FLOAT
       - name: METABOLIC_SYNDROME_RATE
         description: "Metabolic syndrome percentage"
         expr: "100.0 * SUM(HAS_METABOLIC_SYNDROME) / NULLIF(COUNT(*), 0)"
-        data_type: FLOAT
 
 relationships:
   - name: SUMMARY_TO_RAW
-    description: "Links summary to raw NHANES data"
-    left_table: V_GOLD_NHANES_METABOLIC_SUMMARY
-    right_table: V_NHANES_METABOLIC_2021_2023
-    relationship_columns:
-      - left_column: PARTICIPANT_ID
-        right_column: PARTICIPANT_ID
-    relationship_type: one_to_one
+    leftTable: V_GOLD_NHANES_METABOLIC_SUMMARY
+    rightTable: V_NHANES_METABOLIC_2021_2023
+    relationshipColumns:
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+    relationshipType: one_to_one
