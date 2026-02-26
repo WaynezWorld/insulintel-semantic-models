@@ -516,3 +516,40 @@ tables:
       - name: TIME_IN_BED_MINUTES
         expr: TIME_IN_BED_MINUTES
         data_type: NUMBER
+
+relationships:
+  - name: BP_READINGS_TO_DAILY
+    leftTable: V_GOLD_BP_READINGS
+    rightTable: V_GOLD_BP_DAILY_SUMMARY
+    relationshipColumns:
+      - leftColumn: DATASET_SOURCE
+        rightColumn: DATASET_SOURCE
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+      - leftColumn: MEASURED_DATE
+        rightColumn: READING_DATE
+    relationshipType: many_to_one
+
+  - name: SLEEP_SESSIONS_TO_DAILY
+    leftTable: V_GOLD_SLEEP_SESSIONS
+    rightTable: V_GOLD_SLEEP_DAILY
+    relationshipColumns:
+      - leftColumn: DATASET_SOURCE
+        rightColumn: DATASET_SOURCE
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+      - leftColumn: SLEEP_DATE
+        rightColumn: SLEEP_DATE
+    relationshipType: many_to_one
+
+  - name: MEAL_SESSIONS_TO_DAILY
+    leftTable: V_GOLD_MEAL_SESSIONS
+    rightTable: V_GOLD_MEAL_DAILY
+    relationshipColumns:
+      - leftColumn: DATASET_SOURCE
+        rightColumn: DATASET_SOURCE
+      - leftColumn: PARTICIPANT_ID
+        rightColumn: PARTICIPANT_ID
+      - leftColumn: MEAL_DATE
+        rightColumn: READING_DATE
+    relationshipType: many_to_one
