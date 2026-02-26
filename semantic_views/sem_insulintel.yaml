@@ -1,9 +1,70 @@
 name: SEM_INSULINTEL
-description: "CGM-focused semantic model for continuous glucose monitoring analytics. Covers glucose readings, time-in-range metrics, glucose episodes, and post-meal glucose response. Wellness/education only - not for diagnosis or treatment."
-
+description: CGM-focused semantic model for continuous glucose monitoring analytics. Covers glucose readings, time-in-range metrics, glucose episodes, and post-meal glucose response. Wellness/education only - not for diagnosis or treatment.
 tables:
+  - name: V_GLD_WORKOUTS_DIABETES_SESSIONS
+    description: Exercise sessions with glucose context.
+    base_table:
+      database: DB_INSULINTEL
+      schema: SCH_SEMANTIC
+      table: V_GLD_WORKOUTS_DIABETES_SESSIONS
+    primary_key:
+      columns:
+        - USER_APP_ID
+        - END_TS_UTC
+    dimensions:
+      - name: END_TS_UTC
+        expr: END_TS_UTC
+        data_type: TIMESTAMP_NTZ(9)
+      - name: EXERCISE_SESSION_ID
+        expr: EXERCISE_SESSION_ID
+        data_type: VARCHAR(128)
+      - name: INTENSITY_BAND
+        expr: INTENSITY_BAND
+        data_type: VARCHAR(16777216)
+      - name: OBSERVED_DIP_FLAG
+        expr: OBSERVED_DIP_FLAG
+        data_type: BOOLEAN
+      - name: START_TS_UTC
+        expr: START_TS_UTC
+        data_type: TIMESTAMP_NTZ(9)
+      - name: USER_APP_ID
+        expr: USER_APP_ID
+        data_type: VARCHAR(64)
+      - name: WORKOUT_ACTIVITY_TYPE_NAME
+        expr: WORKOUT_ACTIVITY_TYPE_NAME
+        data_type: VARCHAR(10)
+    facts:
+      - name: ACTIVE_ENERGY_KCAL
+        expr: ACTIVE_ENERGY_KCAL
+        data_type: FLOAT
+      - name: AVG_METS
+        expr: AVG_METS
+        data_type: FLOAT
+      - name: DURATION_MINUTES
+        expr: DURATION_MINUTES
+        data_type: NUMBER(24,6)
+      - name: GLUCOSE_CHANGE_2H
+        description: Glucose change 2h post-workout
+        expr: GLUCOSE_CHANGE_2H
+        data_type: FLOAT
+      - name: POST_GLUCOSE_MEAN_120MIN
+        description: Post-workout glucose
+        expr: POST_GLUCOSE_MEAN_120MIN
+        data_type: FLOAT
+      - name: PRE_GLUCOSE_MEAN_30MIN
+        description: Pre-workout glucose
+        expr: PRE_GLUCOSE_MEAN_30MIN
+        data_type: FLOAT
+    metrics:
+      - name: AVG_GLUCOSE_CHANGE_2H
+        expr: AVG(GLUCOSE_CHANGE_2H)
+      - name: TOTAL_WORKOUT_MINUTES
+        expr: SUM(DURATION_MINUTES)
+      - name: WORKOUT_SESSION_COUNT
+        expr: COUNT(DISTINCT EXERCISE_SESSION_ID)
+
   - name: V_GOLD_CGM_UNIFIED
-    description: "Unified CGM readings from production and research datasets."
+    description: Unified CGM readings from production and research datasets.
     base_table:
       database: DB_INSULINTEL
       schema: SCH_SEMANTIC
@@ -14,47 +75,44 @@ tables:
         - PARTICIPANT_ID
         - READING_TS_UTC
     dimensions:
-      - name: DATASET_SOURCE
-        expr: DATASET_SOURCE
-        data_type: VARCHAR
-      - name: PARTICIPANT_ID
-        expr: PARTICIPANT_ID
-        data_type: VARCHAR
       - name: DATA_SOURCE
         expr: DATA_SOURCE
-        data_type: VARCHAR
+        data_type: VARCHAR(16777216)
+      - name: DATASET_SOURCE
+        expr: DATASET_SOURCE
+        data_type: VARCHAR(10)
       - name: DEVICE_TYPE
         expr: DEVICE_TYPE
-        data_type: VARCHAR
+        data_type: VARCHAR(16777216)
+      - name: PARTICIPANT_ID
+        expr: PARTICIPANT_ID
+        data_type: VARCHAR(134217728)
       - name: READING_TS_UTC
         expr: READING_TS_UTC
-        data_type: TIMESTAMP_NTZ
+        data_type: TIMESTAMP_NTZ(9)
       - name: READING_TYPE
         expr: READING_TYPE
-        data_type: VARCHAR
+        data_type: VARCHAR(16777216)
     facts:
-      - name: GLUCOSE_MGDL
-        description: "Glucose reading in mg/dL"
-        expr: GLUCOSE_MGDL
-        data_type: FLOAT
       - name: GLUCOSE_CONFIDENCE
         expr: GLUCOSE_CONFIDENCE
-        data_type: NUMBER
+        data_type: FLOAT
+      - name: GLUCOSE_MGDL
+        description: Glucose reading in mg/dL
+        expr: GLUCOSE_MGDL
+        data_type: FLOAT
     metrics:
       - name: AVG_GLUCOSE
-        description: "Average glucose level"
-        expr: "AVG(GLUCOSE_MGDL)"
-        data_type: FLOAT
-      - name: READING_COUNT
-        description: "Total CGM readings"
-        expr: "COUNT(*)"
-        data_type: NUMBER
+        description: Average glucose level
+        expr: AVG(GLUCOSE_MGDL)
       - name: LATEST_READING_TIMESTAMP
-        expr: "MAX(READING_TS_UTC)"
-        data_type: TIMESTAMP_NTZ
+        expr: MAX(READING_TS_UTC)
+      - name: READING_COUNT
+        description: Total CGM readings
+        expr: COUNT(*)
 
   - name: V_GOLD_GLUCOSE_DAILY_SUMMARY
-    description: "Daily glucose summary with mean, variability, and TIR metrics."
+    description: Daily glucose summary with mean, variability, and TIR metrics.
     base_table:
       database: DB_INSULINTEL
       schema: SCH_SEMANTIC
@@ -65,61 +123,61 @@ tables:
         - PARTICIPANT_ID
         - READING_DATE
     dimensions:
+      - name: DATA_QUALITY_GRADE
+        expr: DATA_QUALITY_GRADE
+        data_type: VARCHAR(4)
       - name: DATASET_SOURCE
         expr: DATASET_SOURCE
-        data_type: VARCHAR
+        data_type: VARCHAR(10)
+      - name: MEETS_ADA_TARGETS
+        expr: MEETS_ADA_TARGETS
+        data_type: NUMBER(1,0)
       - name: PARTICIPANT_ID
         expr: PARTICIPANT_ID
-        data_type: VARCHAR
+        data_type: VARCHAR(64)
       - name: READING_DATE
         expr: READING_DATE
         data_type: DATE
-      - name: DATA_QUALITY_GRADE
-        expr: DATA_QUALITY_GRADE
-        data_type: VARCHAR
-      - name: MEETS_ADA_TARGETS
-        expr: MEETS_ADA_TARGETS
-        data_type: NUMBER
     facts:
-      - name: GLUCOSE_MEAN
-        description: "Mean glucose for the day"
-        expr: GLUCOSE_MEAN
-        data_type: FLOAT
-      - name: GLUCOSE_STD
-        expr: GLUCOSE_STD
-        data_type: FLOAT
-      - name: GLUCOSE_MIN
-        expr: GLUCOSE_MIN
+      - name: DATA_COVERAGE_PCT
+        expr: DATA_COVERAGE_PCT
+        data_type: NUMBER(28,1)
+      - name: GLUCOSE_CV_PCT
+        expr: GLUCOSE_CV_PCT
         data_type: FLOAT
       - name: GLUCOSE_MAX
         expr: GLUCOSE_MAX
         data_type: FLOAT
-      - name: GLUCOSE_CV_PCT
-        expr: GLUCOSE_CV_PCT
+      - name: GLUCOSE_MEAN
+        description: Mean glucose for the day
+        expr: GLUCOSE_MEAN
         data_type: FLOAT
-      - name: TIR_IN_RANGE_PCT
-        description: "Time in range 70-180 (%)"
-        expr: TIR_IN_RANGE_PCT
-        data_type: NUMBER
-      - name: TIME_BELOW_RANGE_PCT
-        expr: TIME_BELOW_RANGE_PCT
-        data_type: NUMBER
-      - name: TIME_ABOVE_RANGE_PCT
-        expr: TIME_ABOVE_RANGE_PCT
-        data_type: NUMBER
+      - name: GLUCOSE_MIN
+        expr: GLUCOSE_MIN
+        data_type: FLOAT
+      - name: GLUCOSE_STD
+        expr: GLUCOSE_STD
+        data_type: FLOAT
       - name: GMI_PCT
-        description: "Glucose Management Indicator"
+        description: Glucose Management Indicator
         expr: GMI_PCT
         data_type: FLOAT
       - name: STABILITY_SCORE_0_100
         expr: STABILITY_SCORE_0_100
-        data_type: NUMBER
-      - name: DATA_COVERAGE_PCT
-        expr: DATA_COVERAGE_PCT
-        data_type: NUMBER
+        data_type: NUMBER(6,2)
+      - name: TIME_ABOVE_RANGE_PCT
+        expr: TIME_ABOVE_RANGE_PCT
+        data_type: NUMBER(23,2)
+      - name: TIME_BELOW_RANGE_PCT
+        expr: TIME_BELOW_RANGE_PCT
+        data_type: NUMBER(23,2)
+      - name: TIR_IN_RANGE_PCT
+        description: Time in range 70-180 (%)
+        expr: TIR_IN_RANGE_PCT
+        data_type: NUMBER(23,2)
 
   - name: V_GOLD_GLUCOSE_EPISODES
-    description: "Detected hypo/hyperglycemic episodes."
+    description: Detected hypo/hyperglycemic episodes.
     base_table:
       database: DB_INSULINTEL
       schema: SCH_SEMANTIC
@@ -133,40 +191,88 @@ tables:
     dimensions:
       - name: DATASET_SOURCE
         expr: DATASET_SOURCE
-        data_type: VARCHAR
-      - name: PARTICIPANT_ID
-        expr: PARTICIPANT_ID
-        data_type: VARCHAR
-      - name: EPISODE_TYPE
-        expr: EPISODE_TYPE
-        data_type: VARCHAR
-      - name: EPISODE_SEVERITY
-        expr: EPISODE_SEVERITY
-        data_type: VARCHAR
+        data_type: VARCHAR(10)
       - name: EPISODE_DATE
         expr: EPISODE_DATE
         data_type: DATE
-      - name: EPISODE_START_TS
-        expr: EPISODE_START_TS
-        data_type: TIMESTAMP_NTZ
       - name: EPISODE_END_TS
         expr: EPISODE_END_TS
-        data_type: TIMESTAMP_NTZ
+        data_type: TIMESTAMP_NTZ(0)
+      - name: EPISODE_SEVERITY
+        expr: EPISODE_SEVERITY
+        data_type: FLOAT
+      - name: EPISODE_START_TS
+        expr: EPISODE_START_TS
+        data_type: TIMESTAMP_NTZ(0)
+      - name: EPISODE_TYPE
+        expr: EPISODE_TYPE
+        data_type: VARCHAR(16777216)
+      - name: PARTICIPANT_ID
+        expr: PARTICIPANT_ID
+        data_type: VARCHAR(64)
     facts:
       - name: DURATION_MINUTES
         expr: DURATION_MINUTES
-        data_type: NUMBER
+        data_type: NUMBER(25,6)
       - name: NADIR_GLUCOSE
-        description: "Lowest glucose in episode"
+        description: Lowest glucose in episode
         expr: NADIR_GLUCOSE
         data_type: FLOAT
       - name: PEAK_GLUCOSE
-        description: "Highest glucose in episode"
+        description: Highest glucose in episode
         expr: PEAK_GLUCOSE
         data_type: FLOAT
 
+  - name: V_GOLD_MEAL_POSTMEAL
+    description: Post-meal glucose response analysis.
+    base_table:
+      database: DB_INSULINTEL
+      schema: SCH_SEMANTIC
+      table: V_GOLD_MEAL_POSTMEAL
+    primary_key:
+      columns:
+        - DATASET_SOURCE
+        - PARTICIPANT_ID
+        - MEAL_START_TS
+    dimensions:
+      - name: DATASET_SOURCE
+        expr: DATASET_SOURCE
+        data_type: VARCHAR(10)
+      - name: MEAL_END_TS
+        expr: MEAL_END_TS
+        data_type: TIMESTAMP_NTZ(9)
+      - name: MEAL_START_TS
+        expr: MEAL_START_TS
+        data_type: TIMESTAMP_NTZ(9)
+      - name: PARTICIPANT_ID
+        expr: PARTICIPANT_ID
+        data_type: VARCHAR(64)
+      - name: SESSION_ID
+        expr: SESSION_ID
+        data_type: VARCHAR(128)
+    facts:
+      - name: CARBS_G
+        expr: CARBS_G
+        data_type: FLOAT
+      - name: POSTMEAL_AVG_0_120
+        description: Avg glucose 0-120 min post-meal
+        expr: POSTMEAL_AVG_0_120
+        data_type: FLOAT
+      - name: POSTMEAL_MAX_0_120
+        expr: POSTMEAL_MAX_0_120
+        data_type: FLOAT
+      - name: POSTMEAL_MIN_0_120
+        expr: POSTMEAL_MIN_0_120
+        data_type: FLOAT
+      - name: TIME_TO_PEAK_MINUTES
+        expr: TIME_TO_PEAK_MINUTES
+        data_type: NUMBER(18,0)
+    metrics:
+      - name: MEAL_EVENT_COUNT
+        expr: COUNT(SESSION_ID)
+
   - name: V_GOLD_TIR_ROLLUPS
-    description: "Time-in-range rollups (7d, 14d, 30d windows)."
+    description: Time-in-range rollups (7d, 14d, 30d windows).
     base_table:
       database: DB_INSULINTEL
       schema: SCH_SEMANTIC
@@ -180,149 +286,35 @@ tables:
     dimensions:
       - name: DATASET_SOURCE
         expr: DATASET_SOURCE
-        data_type: VARCHAR
+        data_type: VARCHAR(10)
+      - name: HYPO_RISK_LEVEL
+        expr: HYPO_RISK_LEVEL
+        data_type: VARCHAR(18)
+      - name: MEETS_ADA_TARGETS
+        expr: MEETS_ADA_TARGETS
+        data_type: NUMBER(1,0)
       - name: PARTICIPANT_ID
         expr: PARTICIPANT_ID
-        data_type: VARCHAR
+        data_type: VARCHAR(64)
+      - name: TIR_GRADE
+        expr: TIR_GRADE
+        data_type: VARCHAR(17)
       - name: WINDOW_DATE
         expr: WINDOW_DATE
         data_type: DATE
       - name: WINDOW_TYPE
         expr: WINDOW_TYPE
-        data_type: VARCHAR
-      - name: TIR_GRADE
-        expr: TIR_GRADE
-        data_type: VARCHAR
-      - name: HYPO_RISK_LEVEL
-        expr: HYPO_RISK_LEVEL
-        data_type: VARCHAR
-      - name: MEETS_ADA_TARGETS
-        expr: MEETS_ADA_TARGETS
-        data_type: NUMBER
+        data_type: VARCHAR(11)
     facts:
-      - name: TIME_IN_RANGE_PCT
-        expr: TIME_IN_RANGE_PCT
+      - name: COVERAGE_RATIO
+        expr: COVERAGE_RATIO
+        data_type: NUMBER(25,4)
+      - name: TIME_ABOVE_RANGE_PCT
+        expr: TIME_ABOVE_RANGE_PCT
         data_type: FLOAT
       - name: TIME_BELOW_RANGE_PCT
         expr: TIME_BELOW_RANGE_PCT
         data_type: FLOAT
-      - name: TIME_ABOVE_RANGE_PCT
-        expr: TIME_ABOVE_RANGE_PCT
-        data_type: FLOAT
-      - name: COVERAGE_RATIO
-        expr: COVERAGE_RATIO
-        data_type: FLOAT
-
-  - name: V_GOLD_MEAL_POSTMEAL
-    description: "Post-meal glucose response analysis."
-    base_table:
-      database: DB_INSULINTEL
-      schema: SCH_SEMANTIC
-      table: V_GOLD_MEAL_POSTMEAL
-    primary_key:
-      columns:
-        - DATASET_SOURCE
-        - PARTICIPANT_ID
-        - MEAL_START_TS
-    dimensions:
-      - name: DATASET_SOURCE
-        expr: DATASET_SOURCE
-        data_type: VARCHAR
-      - name: PARTICIPANT_ID
-        expr: PARTICIPANT_ID
-        data_type: VARCHAR
-      - name: SESSION_ID
-        expr: SESSION_ID
-        data_type: VARCHAR
-      - name: MEAL_START_TS
-        expr: MEAL_START_TS
-        data_type: TIMESTAMP_NTZ
-      - name: MEAL_END_TS
-        expr: MEAL_END_TS
-        data_type: TIMESTAMP_NTZ
-    facts:
-      - name: CARBS_G
-        expr: CARBS_G
-        data_type: FLOAT
-      - name: POSTMEAL_AVG_0_120
-        description: "Avg glucose 0-120 min post-meal"
-        expr: POSTMEAL_AVG_0_120
-        data_type: FLOAT
-      - name: POSTMEAL_MAX_0_120
-        expr: POSTMEAL_MAX_0_120
-        data_type: FLOAT
-      - name: POSTMEAL_MIN_0_120
-        expr: POSTMEAL_MIN_0_120
-        data_type: FLOAT
-      - name: TIME_TO_PEAK_MINUTES
-        expr: TIME_TO_PEAK_MINUTES
-        data_type: NUMBER
-    metrics:
-      - name: MEAL_EVENT_COUNT
-        expr: "COUNT(SESSION_ID)"
-        data_type: NUMBER
-
-  - name: V_GLD_WORKOUTS_DIABETES_SESSIONS
-    description: "Exercise sessions with glucose context."
-    base_table:
-      database: DB_INSULINTEL
-      schema: SCH_SEMANTIC
-      table: V_GLD_WORKOUTS_DIABETES_SESSIONS
-    primary_key:
-      columns:
-        - USER_APP_ID
-        - END_TS_UTC
-    dimensions:
-      - name: USER_APP_ID
-        expr: USER_APP_ID
-        data_type: VARCHAR
-      - name: EXERCISE_SESSION_ID
-        expr: EXERCISE_SESSION_ID
-        data_type: VARCHAR
-      - name: START_TS_UTC
-        expr: START_TS_UTC
-        data_type: TIMESTAMP_NTZ
-      - name: END_TS_UTC
-        expr: END_TS_UTC
-        data_type: TIMESTAMP_NTZ
-      - name: INTENSITY_BAND
-        expr: INTENSITY_BAND
-        data_type: VARCHAR
-      - name: WORKOUT_ACTIVITY_TYPE_NAME
-        expr: WORKOUT_ACTIVITY_TYPE_NAME
-        data_type: VARCHAR
-      - name: OBSERVED_DIP_FLAG
-        expr: OBSERVED_DIP_FLAG
-        data_type: NUMBER
-    facts:
-      - name: DURATION_MINUTES
-        expr: DURATION_MINUTES
-        data_type: NUMBER
-      - name: ACTIVE_ENERGY_KCAL
-        expr: ACTIVE_ENERGY_KCAL
-        data_type: FLOAT
-      - name: AVG_METS
-        expr: AVG_METS
-        data_type: FLOAT
-      - name: PRE_GLUCOSE_MEAN_30MIN
-        description: "Pre-workout glucose"
-        expr: PRE_GLUCOSE_MEAN_30MIN
-        data_type: FLOAT
-      - name: POST_GLUCOSE_MEAN_120MIN
-        description: "Post-workout glucose"
-        expr: POST_GLUCOSE_MEAN_120MIN
-        data_type: FLOAT
-      - name: GLUCOSE_CHANGE_2H
-        description: "Glucose change 2h post-workout"
-        expr: GLUCOSE_CHANGE_2H
-        data_type: FLOAT
-    metrics:
-      - name: TOTAL_WORKOUT_MINUTES
-        expr: "SUM(DURATION_MINUTES)"
-        data_type: NUMBER
-      - name: WORKOUT_SESSION_COUNT
-        expr: "COUNT(DISTINCT EXERCISE_SESSION_ID)"
-        data_type: NUMBER
-      - name: AVG_GLUCOSE_CHANGE_2H
-        expr: "AVG(GLUCOSE_CHANGE_2H)"
+      - name: TIME_IN_RANGE_PCT
+        expr: TIME_IN_RANGE_PCT
         data_type: FLOAT
