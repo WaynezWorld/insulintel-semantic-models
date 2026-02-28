@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0"]
+dev = ["pytest>=7.0", "pytest-cov>=4.0", "pre-commit>=3.0", "ruff>=0.9.0"]
 
 [project.scripts]
 semantic-diff = "semantic_diff.cli:main"
@@ -25,3 +25,28 @@ include = ["semantic_diff*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "SIM108", # ternary operator (readability preference)
+    "B028",   # no explicit stacklevel in warnings
+    "RUF012", # mutable class variable (dataclasses pattern)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E501", "B011", "SIM300"]

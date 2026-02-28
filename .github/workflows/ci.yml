@@ -7,6 +7,7 @@ on:
       - 'scripts/**/*.sql'
       - 'scripts/**/*.py'
       - 'app/**/*.py'
+      - 'tests/**/*.py'
       - 'pyproject.toml'
       - '.github/workflows/ci.yml'
       - 'README.md'
@@ -19,6 +20,7 @@ on:
       - 'scripts/**/*.sql'
       - 'scripts/**/*.py'
       - 'app/**/*.py'
+      - 'tests/**/*.py'
       - 'pyproject.toml'
       - '.github/workflows/ci.yml'
       - 'README.md'
@@ -40,7 +42,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install package
-        run: pip install -e .
+        run: pip install -e ".[dev]"
 
       - name: Run repository validator
         run: python scripts/validate_repo.py
@@ -48,11 +50,29 @@ jobs:
       - name: Build deploy artefacts
         run: python scripts/build_deploy.py
 
+      - name: Run tests with coverage
+        run: |
+          pip install pytest-cov
+          pytest tests/ -q --cov=semantic_diff --cov=app --cov-report=term-missing --cov-report=json:coverage.json
+
+      - name: Generate coverage badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          COVERAGE=$(python -c "import json; d=json.load(open('coverage.json')); print(int(d['totals']['percent_covered']))")
+          echo "Coverage: ${COVERAGE}%"
+          if [ "$COVERAGE" -ge 90 ]; then COLOR="brightgreen";
+          elif [ "$COVERAGE" -ge 75 ]; then COLOR="green";
+          elif [ "$COVERAGE" -ge 60 ]; then COLOR="yellowgreen";
+          elif [ "$COVERAGE" -ge 40 ]; then COLOR="yellow";
+          else COLOR="red"; fi
+          mkdir -p .github/badges
+          curl -s "https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}" > .github/badges/coverage.svg
+
       - name: Commit deploy artefacts
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add deploy/
+          git add deploy/ .github/badges/
           git diff --cached --quiet && echo "No changes to commit" || \
-            (git commit -m "ci: rebuild deploy artefacts" && git push)
+            (git commit -m "ci: rebuild deploy artefacts + update coverage badge" && git push)

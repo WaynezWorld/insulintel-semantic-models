@@ -11,10 +11,19 @@ variables or ``.streamlit/secrets.toml``.
 from __future__ import annotations
 
 import json
+import sys
+from pathlib import Path
 
 import pytest
 
-from app.deployer import (
+# ---------------------------------------------------------------------------
+# Import the module under test (same pattern as test_deployer.py)
+# ---------------------------------------------------------------------------
+_REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(_REPO_ROOT / "app") not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT / "app"))
+
+from deployer import (
     build_deployable_yaml,
     deploy_agent_field,
     deploy_semantic_view,

@@ -449,25 +449,37 @@ def _render_diff(conn, target_type, target, field, assembly) -> None:
         st.info("Connect to Snowflake to view diffs.")
         return
 
-    if st.button("🔄 Fetch from Snowflake", key="diff_fetch"):
-        with st.spinner("Fetching…"):
-            if target_type == "Semantic View":
-                st.session_state["live_ci"] = get_live_custom_instructions(
-                    conn, target,
+    # ── Fetch button ──────────────────────────────────────────────────
+    col_fetch, col_mode = st.columns([1, 2])
+    with col_fetch:
+        if st.button("🔄 Fetch from Snowflake", key="diff_fetch"):
+            with st.spinner("Fetching all targets…"):
+                # Fetch all views + agent so "All Fields" mode works
+                for vn in ("SEM_ACTIVITY", "SEM_INSULINTEL", "SEM_NHANES"):
+                    st.session_state[f"live_ci_{vn}"] = (
+                        get_live_custom_instructions(conn, vn)
+                    )
+                st.session_state["live_agent_diff"] = (
+                    get_live_agent_instructions(conn)
                 )
-            else:
-                st.session_state["live_agent"] = get_live_agent_instructions(
-                    conn,
-                )
+    with col_mode:
+        diff_mode = st.radio(
+            "Mode", ["Current Field", "All Fields Overview"],
+            horizontal=True, key="diff_mode",
+        )
 
-    # Repo side (from files, not editor state)
+    # ── All-Fields overview ───────────────────────────────────────────
+    if diff_mode == "All Fields Overview":
+        _render_diff_overview(assembly)
+        return
+
+    # ── Single-field diff ─────────────────────────────────────────────
     repo_text = assemble_from_files(target_type, target, field, assembly)
 
-    # Snowflake side
     if target_type == "Semantic View":
-        live = st.session_state.get("live_ci", {})
+        live = st.session_state.get(f"live_ci_{target}", {})
     else:
-        live = st.session_state.get("live_agent", {})
+        live = st.session_state.get("live_agent_diff", {})
 
     if not live:
         st.caption("Click **Fetch from Snowflake** to load the live state.")
@@ -483,13 +495,36 @@ def _render_diff(conn, target_type, target, field, assembly) -> None:
         st.success("✅ Repo and Snowflake are in sync for this field.")
     else:
         st.warning("⚠️ Differences detected")
-        diff = difflib.unified_diff(
+
+        # Change statistics
+        sf_lines = sf_text.splitlines()
+        repo_lines = repo_text.splitlines()
+        sm = difflib.SequenceMatcher(None, sf_lines, repo_lines)
+        added = removed = changed = 0
+        for tag, i1, i2, j1, j2 in sm.get_opcodes():
+            if tag == "insert":
+                added += j2 - j1
+            elif tag == "delete":
+                removed += i2 - i1
+            elif tag == "replace":
+                changed += max(i2 - i1, j2 - j1)
+        st.markdown(
+            f"**{added}** lines added · **{removed}** lines removed · "
+            f"**{changed}** lines changed"
+        )
+
+        # Unified diff (copyable)
+        diff_text = "".join(difflib.unified_diff(
             sf_text.splitlines(keepends=True),
             repo_text.splitlines(keepends=True),
             fromfile="☁️  Snowflake (live)",
             tofile="📁 Repo (assembled)",
-        )
-        st.code("".join(diff), language="diff")
+        ))
+        with st.expander("📋 Unified diff (raw)", expanded=False):
+            st.code(diff_text, language="diff")
+
+        # Colored HTML diff
+        _render_html_diff(sf_text, repo_text)
 
     # Side-by-side view
     col1, col2 = st.columns(2)
@@ -505,6 +540,132 @@ def _render_diff(conn, target_type, target, field, assembly) -> None:
             "repo", repo_text, height=400, disabled=True,
             label_visibility="collapsed", key="diff_repo",
         )
+
+
+def _render_diff_overview(assembly: dict) -> None:
+    """Show sync status for every target × field combination."""
+    rows: list[dict] = []
+
+    # Semantic views
+    for vn in ("SEM_ACTIVITY", "SEM_INSULINTEL", "SEM_NHANES"):
+        live = st.session_state.get(f"live_ci_{vn}", {})
+        for fld in ("sql_generation", "question_categorization"):
+            repo_text = assemble_from_files("Semantic View", vn, fld, assembly)
+            sf_text = live.get(fld, "") if live and "_error" not in live else ""
+            if not live:
+                status = "⏳ Not fetched"
+            elif "_error" in live:
+                status = "❌ Error"
+            elif repo_text.strip() == sf_text.strip():
+                status = "✅ In sync"
+            else:
+                status = "⚠️ Drifted"
+            rows.append({
+                "Target": vn,
+                "Field": fld,
+                "Status": status,
+                "Repo chars": f"{len(repo_text):,}",
+                "SF chars": f"{len(sf_text):,}" if live else "—",
+            })
+
+    # Agent
+    live_agent = st.session_state.get("live_agent_diff", {})
+    for fld in ("orchestration_instructions", "response_instructions"):
+        repo_text = assemble_from_files("Agent", "INSULINTEL", fld, assembly)
+        sf_text = live_agent.get(fld, "") if live_agent and "_error" not in live_agent else ""
+        if not live_agent:
+            status = "⏳ Not fetched"
+        elif "_error" in live_agent:
+            status = "❌ Error"
+        elif repo_text.strip() == sf_text.strip():
+            status = "✅ In sync"
+        else:
+            status = "⚠️ Drifted"
+        rows.append({
+            "Target": f"Agent:INSULINTEL",
+            "Field": fld,
+            "Status": status,
+            "Repo chars": f"{len(repo_text):,}",
+            "SF chars": f"{len(sf_text):,}" if live_agent else "—",
+        })
+
+    # Summary metrics
+    synced = sum(1 for r in rows if "In sync" in r["Status"])
+    drifted = sum(1 for r in rows if "Drifted" in r["Status"])
+    unfetched = sum(1 for r in rows if "Not fetched" in r["Status"])
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Total Fields", len(rows))
+    c2.metric("In Sync", synced)
+    c3.metric("Drifted", drifted, delta=f"-{drifted}" if drifted else None,
+              delta_color="inverse")
+    c4.metric("Unfetched", unfetched)
+
+    st.dataframe(rows, use_container_width=True, hide_index=True)
+
+
+def _render_html_diff(sf_text: str, repo_text: str) -> None:
+    """Render a colored inline diff with word-level highlighting."""
+    sf_lines = sf_text.splitlines()
+    repo_lines = repo_text.splitlines()
+    sm = difflib.SequenceMatcher(None, sf_lines, repo_lines)
+
+    html_parts = [
+        "<div style='font-family:monospace; font-size:13px; "
+        "line-height:1.5; overflow-x:auto; max-height:600px; "
+        "overflow-y:auto; border:1px solid #444; border-radius:6px; "
+        "padding:8px; background:#1e1e1e;'>"
+    ]
+
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag == "equal":
+            for line in sf_lines[i1:i2]:
+                html_parts.append(
+                    f"<div style='color:#d4d4d4;'>"
+                    f"<span style='color:#666; user-select:none;'>&nbsp;&nbsp;</span>"
+                    f" {_html_escape(line)}</div>"
+                )
+        elif tag == "delete":
+            for line in sf_lines[i1:i2]:
+                html_parts.append(
+                    f"<div style='background:#3e1e1e; color:#f48771;'>"
+                    f"<span style='color:#f48771; user-select:none;'>- </span>"
+                    f" {_html_escape(line)}</div>"
+                )
+        elif tag == "insert":
+            for line in repo_lines[j1:j2]:
+                html_parts.append(
+                    f"<div style='background:#1e3e1e; color:#89d185;'>"
+                    f"<span style='color:#89d185; user-select:none;'>+ </span>"
+                    f" {_html_escape(line)}</div>"
+                )
+        elif tag == "replace":
+            # Word-level diff for replaced lines
+            for line in sf_lines[i1:i2]:
+                html_parts.append(
+                    f"<div style='background:#3e1e1e; color:#f48771;'>"
+                    f"<span style='color:#f48771; user-select:none;'>- </span>"
+                    f" {_html_escape(line)}</div>"
+                )
+            for line in repo_lines[j1:j2]:
+                html_parts.append(
+                    f"<div style='background:#1e3e1e; color:#89d185;'>"
+                    f"<span style='color:#89d185; user-select:none;'>+ </span>"
+                    f" {_html_escape(line)}</div>"
+                )
+
+    html_parts.append("</div>")
+    st.markdown("".join(html_parts), unsafe_allow_html=True)
+
+
+def _html_escape(text: str) -> str:
+    """Escape HTML special characters, preserving spaces for display."""
+    return (
+        text.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace(" ", "&nbsp;")
+    )
 
 
 def _render_live(conn, target_type, target, field) -> None:
