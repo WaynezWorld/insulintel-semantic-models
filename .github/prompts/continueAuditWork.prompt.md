@@ -31,10 +31,16 @@ Two rounds of repo audit have been completed and **merged to `main`**.
 | 4 | **96 new tests** (117 total across 5 files) | `tests/test_deployer.py`, `tests/test_snapshot_manager.py`, `tests/test_diff_engine.py`, `tests/test_normalize_yaml.py` |
 | 5 | **README expanded** — instruction pipeline, Streamlit admin panel docs, test coverage table | `README.md` |
 
+### PR #6 (IN PROGRESS) — `normalize_sf.py` Tests
+
+| # | Fix | Key Files |
+|---|-----|-----------|
+| 1 | **52 unit tests for `normalize_sf.py`** — CSV reading (UTF-8/UTF-16/CP1252), JSON extraction, all individual parsers (base_table, dimension, fact, metric, key, relationship, table, custom_instructions), `load_snowflake_json`, `load_snowflake_describe`, JSON/CSV parity | `tests/test_normalize_sf.py` |
+
 ### Validation (all passing on `main`)
 - `python scripts/validate_repo.py` ✅
 - `python scripts/build_deploy.py` ✅
-- `pytest tests/ -q` → **117 passed** ✅
+- `pytest tests/ -q` → **169 passed** ✅ (117 prior + 52 new normalize_sf)
 
 ## Key Architecture Notes
 
@@ -54,7 +60,7 @@ Everything works. These are prioritized future improvements:
 2. ~~**Streamlit app smoke test**~~ ✅ DONE — app starts cleanly on port 8501, health endpoint OK, all 5 tabs functional (Editor, Preview, Diff, Live, Test). Full edit → save → preview → deploy → revert cycle tested.
 
 ### Medium Priority
-3. **`normalize_sf.py` tests** — normalises Snowflake `DESCRIBE SEMANTIC VIEW` output; currently untested
+3. ~~**`normalize_sf.py` tests**~~ ✅ DONE — 52 tests covering CSV encoding fallback, JSON extraction, all parsers, public API (`load_snowflake_describe`, `load_snowflake_json`), and JSON/CSV parity. Branch: `test/normalize-sf-tests`.
 4. **`validate_repo.py` tests** — unit tests for the repo validation script
 5. **`build_deploy.py` tests** — unit tests for the build/deploy pipeline script
 6. **Integration test harness** — `pytest` fixtures with a `--live` flag for tests that need a Snowflake connection
