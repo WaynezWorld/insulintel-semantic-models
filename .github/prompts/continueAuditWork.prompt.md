@@ -49,9 +49,9 @@ Two rounds of repo audit have been completed and **merged to `main`**.
 
 Everything works. These are prioritized future improvements:
 
-### High Priority
-1. **Live Snowflake validation** — Run `SHOW AGENTS`, `DESCRIBE AGENT`, and `ALTER AGENT` against the real account (`LIYWRBM-JZC37138`) to confirm end-to-end correctness
-2. **Streamlit app smoke test** — `streamlit run app/streamlit_app.py` — verify it starts cleanly and each tab renders
+### High Priority (both done)
+1. ~~**Live Snowflake validation**~~ ✅ DONE — `ALTER AGENT ... MODIFY LIVE VERSION SET SPECIFICATION` confirmed working against `LIYWRBM-JZC37138`. Deploy + revert cycle tested via Streamlit admin panel. Persona change ("Rudy") visible in Snowflake console.
+2. ~~**Streamlit app smoke test**~~ ✅ DONE — app starts cleanly on port 8501, health endpoint OK, all 5 tabs functional (Editor, Preview, Diff, Live, Test). Full edit → save → preview → deploy → revert cycle tested.
 
 ### Medium Priority
 3. **`normalize_sf.py` tests** — normalises Snowflake `DESCRIBE SEMANTIC VIEW` output; currently untested
