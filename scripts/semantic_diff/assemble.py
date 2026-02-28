@@ -16,25 +16,30 @@ from typing import Dict, List, Set, Tuple
 import yaml
 
 
-def _load_assembly_config(repo_root: Path) -> dict:
+def load_assembly_config(repo_root: Path) -> dict:
+    """Load and parse ``instructions/assembly.yaml``."""
     path = repo_root / "instructions" / "assembly.yaml"
     with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-def _read_module_content(repo_root: Path, rel_path: str) -> str:
-    """Read the 'content' field from an instruction module."""
+def read_module_data(repo_root: Path, rel_path: str) -> dict:
+    """Read the full dict from an instruction module YAML."""
     full = repo_root / "instructions" / rel_path
     with open(full, encoding="utf-8") as f:
-        data = yaml.safe_load(f) or {}
-    return str(data.get("content", "")).strip()
+        return yaml.safe_load(f) or {}
 
 
-def _concat_modules(repo_root: Path, module_paths: List[str]) -> str:
+def read_module_content(repo_root: Path, rel_path: str) -> str:
+    """Read the ``content`` field from an instruction module."""
+    return str(read_module_data(repo_root, rel_path).get("content", "")).strip()
+
+
+def concat_modules(repo_root: Path, module_paths: List[str]) -> str:
     """Concatenate content from multiple module files, separated by newlines."""
     parts = []
     for rel in module_paths:
-        content = _read_module_content(repo_root, rel)
+        content = read_module_content(repo_root, rel)
         if content:
             parts.append(content)
     return "\n\n".join(parts)
@@ -59,13 +64,13 @@ def assemble_semantic_view_instructions(
             ...
         }
     """
-    config = _load_assembly_config(repo_root)
+    config = load_assembly_config(repo_root)
     result: Dict[str, Dict[str, str]] = {}
 
     for view_name, targets in config.get("semantic_views", {}).items():
         result[view_name] = {}
         for target_field, modules in targets.items():
-            result[view_name][target_field] = _concat_modules(
+            result[view_name][target_field] = concat_modules(
                 repo_root, modules or []
             )
     return result
@@ -85,13 +90,13 @@ def assemble_agent_instructions(
             },
         }
     """
-    config = _load_assembly_config(repo_root)
+    config = load_assembly_config(repo_root)
     result: Dict[str, Dict[str, str]] = {}
 
     for agent_name, targets in config.get("agent", {}).items():
         result[agent_name] = {}
         for target_field, modules in targets.items():
-            result[agent_name][target_field] = _concat_modules(
+            result[agent_name][target_field] = concat_modules(
                 repo_root, modules or []
             )
     return result
@@ -99,7 +104,7 @@ def assemble_agent_instructions(
 
 def collect_all_referenced_files(repo_root: Path) -> Set[str]:
     """Return the set of all module paths referenced in assembly.yaml."""
-    config = _load_assembly_config(repo_root)
+    config = load_assembly_config(repo_root)
     referenced: Set[str] = set()
 
     for _view, targets in config.get("semantic_views", {}).items():

@@ -1,0 +1,811 @@
+name: SEM_ACTIVITY
+description: Activity and lifestyle analytics semantic model covering exercise sessions, meals, sleep patterns, blood pressure, and CGM data. Links behavioral factors to glucose outcomes for personalized wellness insights.
+tables:
+- name: V_GOLD_ASSOCIATIONS
+  description: Statistical associations between candidate factors and health outcomes.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_ASSOCIATIONS
+  dimensions:
+  - name: ASSOCIATION_DATE
+    expr: ASSOCIATION_DATE
+    data_type: DATE
+  - name: CANDIDATE_FACTOR
+    expr: CANDIDATE_FACTOR
+    data_type: VARCHAR(16)
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: DIRECTION
+    expr: DIRECTION
+    data_type: VARCHAR(1)
+  - name: GUARDRAIL_NOTE
+    expr: GUARDRAIL_NOTE
+    data_type: VARCHAR(62)
+  - name: OUTCOME_TYPE
+    expr: OUTCOME_TYPE
+    data_type: VARCHAR(9)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: STRENGTH_GRADE
+    expr: STRENGTH_GRADE
+    data_type: VARCHAR(10)
+  - name: SUGGESTED_ACTION
+    expr: SUGGESTED_ACTION
+    data_type: VARCHAR(15)
+  facts:
+  - name: ASSOCIATION_STRENGTH
+    expr: ASSOCIATION_STRENGTH
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: CONFIDENCE
+    expr: CONFIDENCE
+    data_type: NUMBER(26,3)
+    access_modifier: public_access
+  metrics:
+  - name: UNIQUE_PARTICIPANTS_COUNT
+    description: Count of unique participants
+    expr: COUNT(DISTINCT PARTICIPANT_ID)
+    access_modifier: public_access
+- name: V_GOLD_BP_DAILY_SUMMARY
+  description: Daily blood pressure summary statistics.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_BP_DAILY_SUMMARY
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: READING_DATE
+    expr: READING_DATE
+    data_type: DATE
+  - name: USER_TIMEZONE_IANA
+    expr: USER_TIMEZONE_IANA
+    data_type: VARCHAR(16777216)
+  facts:
+  - name: DIASTOLIC_MAX
+    expr: DIASTOLIC_MAX
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: DIASTOLIC_MEAN
+    expr: DIASTOLIC_MEAN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: DIASTOLIC_MIN
+    expr: DIASTOLIC_MIN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: DIASTOLIC_STD
+    expr: DIASTOLIC_STD
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: MAP_MEAN
+    expr: MAP_MEAN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: PULSE_PRESSURE_MEAN
+    expr: PULSE_PRESSURE_MEAN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: READING_COUNT
+    expr: READING_COUNT
+    data_type: NUMBER(18,0)
+    access_modifier: public_access
+  - name: SYSTOLIC_MAX
+    expr: SYSTOLIC_MAX
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: SYSTOLIC_MEAN
+    expr: SYSTOLIC_MEAN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: SYSTOLIC_MIN
+    expr: SYSTOLIC_MIN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: SYSTOLIC_STD
+    expr: SYSTOLIC_STD
+    data_type: FLOAT
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - DATASET_SOURCE
+    - PARTICIPANT_ID
+    - READING_DATE
+- name: V_GOLD_BP_READINGS
+  description: Individual blood pressure readings.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_BP_READINGS
+  dimensions:
+  - name: BP_CATEGORY
+    expr: BP_CATEGORY
+    data_type: VARCHAR(16777216)
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: MEASURED_DATE
+    expr: MEASURED_DATE
+    data_type: DATE
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: SOURCE_NAME
+    expr: SOURCE_NAME
+    data_type: VARCHAR(16777216)
+  facts:
+  - name: DIASTOLIC_MMHG
+    expr: DIASTOLIC_MMHG
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: MAP_MMHG
+    expr: MAP_MMHG
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: PULSE_PRESSURE_MMHG
+    expr: PULSE_PRESSURE_MMHG
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: SYSTOLIC_MMHG
+    expr: SYSTOLIC_MMHG
+    data_type: FLOAT
+    access_modifier: public_access
+- name: V_GOLD_CGM_SUBJECTS
+  description: CGM participant summary.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_CGM_SUBJECTS
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(134217728)
+  facts:
+  - name: N_DATA_SOURCES
+    expr: N_DATA_SOURCES
+    data_type: NUMBER(18,0)
+    access_modifier: public_access
+  - name: N_DEVICE_TYPES
+    expr: N_DEVICE_TYPES
+    data_type: NUMBER(18,0)
+    access_modifier: public_access
+  - name: N_DEVICES
+    expr: N_DEVICES
+    data_type: NUMBER(18,0)
+    access_modifier: public_access
+  - name: N_READINGS
+    expr: N_READINGS
+    data_type: NUMBER(18,0)
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - DATASET_SOURCE
+    - PARTICIPANT_ID
+- name: V_GOLD_EXERCISE_SESSIONS
+  description: Exercise session records.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_EXERCISE_SESSIONS
+  dimensions:
+  - name: ACTIVITY_TYPE
+    expr: ACTIVITY_TYPE
+    data_type: VARCHAR(16777216)
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: GLUCOSE_RESPONSE_TYPE
+    expr: GLUCOSE_RESPONSE_TYPE
+    data_type: VARCHAR(134217728)
+  - name: INTENSITY_BAND
+    expr: INTENSITY_BAND
+    data_type: VARCHAR(16777216)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: SESSION_DATE
+    expr: SESSION_DATE
+    data_type: DATE
+  - name: SESSION_ID
+    expr: SESSION_ID
+    data_type: VARCHAR(128)
+  - name: SESSION_TYPE
+    expr: SESSION_TYPE
+    data_type: VARCHAR(21)
+  facts:
+  - name: ACTIVE_ENERGY_KCAL
+    expr: ACTIVE_ENERGY_KCAL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: AVG_METS
+    expr: AVG_METS
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: CONFIDENCE
+    expr: CONFIDENCE
+    data_type: NUMBER(16,3)
+    access_modifier: public_access
+  - name: DURATION_MINUTES
+    expr: DURATION_MINUTES
+    data_type: NUMBER(24,6)
+    access_modifier: public_access
+  - name: EXERCISE_MINUTES
+    expr: EXERCISE_MINUTES
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: GLUCOSE_CHANGE_2H
+    expr: GLUCOSE_CHANGE_2H
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: POST_GLUCOSE_MEAN
+    expr: POST_GLUCOSE_MEAN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: PRE_GLUCOSE_MEAN
+    expr: PRE_GLUCOSE_MEAN
+    data_type: FLOAT
+    access_modifier: public_access
+- name: V_GOLD_MEAL_DAILY
+  description: Daily meal summaries.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_MEAL_DAILY
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: READING_DATE
+    expr: READING_DATE
+    data_type: DATE
+  facts:
+  - name: AVG_CARBS_G
+    expr: AVG_CARBS_G
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: AVG_MEAL_SCORE
+    expr: AVG_MEAL_SCORE
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: AVG_PEAK_DELTA
+    expr: AVG_PEAK_DELTA
+    data_type: FLOAT
+    description: Average post-meal glucose spike magnitude (mg/dL) across meals for the day.
+    access_modifier: public_access
+  - name: AVG_TIME_TO_PEAK_MINUTES
+    expr: AVG_TIME_TO_PEAK_MINUTES
+    data_type: FLOAT
+    description: Average minutes from meal start to peak glucose across meals for the day.
+    access_modifier: public_access
+  - name: HIGH_CARB_MEALS_COUNT
+    expr: HIGH_CARB_MEALS_COUNT
+    data_type: NUMBER(18,0)
+    description: Number of meals exceeding the high-carb threshold for the day.
+    access_modifier: public_access
+  - name: MEAL_COUNT
+    expr: MEAL_COUNT
+    data_type: NUMBER(18,0)
+    access_modifier: public_access
+  - name: TOTAL_CARBS_G
+    expr: TOTAL_CARBS_G
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: TOTAL_FAT_G
+    expr: TOTAL_FAT_G
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: TOTAL_PROTEIN_G
+    expr: TOTAL_PROTEIN_G
+    data_type: FLOAT
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - DATASET_SOURCE
+    - PARTICIPANT_ID
+    - READING_DATE
+- name: V_GOLD_MEAL_POSTMEAL
+  description: Post-meal glucose response.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_MEAL_POSTMEAL
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: MEAL_END_TS
+    expr: MEAL_END_TS
+    data_type: TIMESTAMP_NTZ(9)
+  - name: MEAL_START_TS
+    expr: MEAL_START_TS
+    data_type: TIMESTAMP_NTZ(9)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: SESSION_ID
+    expr: SESSION_ID
+    data_type: VARCHAR(128)
+  facts:
+  - name: CARBS_G
+    expr: CARBS_G
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: POSTMEAL_AVG_0_120
+    expr: POSTMEAL_AVG_0_120
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: POSTMEAL_MAX_0_120
+    expr: POSTMEAL_MAX_0_120
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: POSTMEAL_MIN_0_120
+    expr: POSTMEAL_MIN_0_120
+    data_type: FLOAT
+    access_modifier: public_access
+- name: V_GOLD_MEAL_SESSIONS
+  description: Individual meal sessions.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_MEAL_SESSIONS
+  dimensions:
+  - name: CARB_CATEGORY
+    expr: CARB_CATEGORY
+    data_type: VARCHAR(134217728)
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: GLUCOSE_SPIKE_GRADE
+    expr: GLUCOSE_SPIKE_GRADE
+    data_type: VARCHAR(134217728)
+  - name: MEAL_DATE
+    expr: MEAL_DATE
+    data_type: DATE
+  - name: MEAL_TYPE_INFERRED
+    expr: MEAL_TYPE_INFERRED
+    data_type: VARCHAR(9)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: SESSION_ID
+    expr: SESSION_ID
+    data_type: VARCHAR(128)
+  facts:
+  - name: CARBS_G
+    expr: CARBS_G
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: FAT_TOTAL_G
+    expr: FAT_TOTAL_G
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: MEAL_SCORE
+    expr: MEAL_SCORE
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: PEAK_DELTA
+    expr: PEAK_DELTA
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: PEAK_GLUCOSE
+    expr: PEAK_GLUCOSE
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: PROTEIN_G
+    expr: PROTEIN_G
+    data_type: FLOAT
+    access_modifier: public_access
+- name: V_GOLD_SLEEP_DAILY
+  description: Daily sleep summaries.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_SLEEP_DAILY
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: REGULARITY_GRADE
+    expr: REGULARITY_GRADE
+    data_type: VARCHAR(18)
+  - name: SLEEP_DATE
+    expr: SLEEP_DATE
+    data_type: DATE
+  - name: SLEEP_DURATION_GRADE
+    expr: SLEEP_DURATION_GRADE
+    data_type: VARCHAR(10)
+  facts:
+  - name: FASTING_GATE_SCORE
+    expr: FASTING_GATE_SCORE
+    data_type: FLOAT
+    description: Sleep-quality indicator reflecting overnight fasting glucose impact (0–100 scale).
+    access_modifier: public_access
+  - name: FRAGMENTATION_INDEX
+    expr: FRAGMENTATION_INDEX
+    data_type: NUMBER(31,6)
+    access_modifier: public_access
+  - name: SLEEP_CONFIDENCE
+    expr: SLEEP_CONFIDENCE
+    data_type: NUMBER(11,3)
+    access_modifier: public_access
+  - name: SLEEP_DURATION_HOURS
+    expr: SLEEP_DURATION_HOURS
+    data_type: NUMBER(38,2)
+    access_modifier: public_access
+  - name: SLEEP_DURATION_MINUTES
+    expr: SLEEP_DURATION_MINUTES
+    data_type: NUMBER(36,6)
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - DATASET_SOURCE
+    - PARTICIPANT_ID
+    - SLEEP_DATE
+- name: V_GOLD_SLEEP_GLUCOSE_DAILY
+  description: Daily sleep with glucose context.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_SLEEP_GLUCOSE_DAILY
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: READING_DATE
+    expr: READING_DATE
+    data_type: DATE
+  - name: REGULARITY_GRADE
+    expr: REGULARITY_GRADE
+    data_type: VARCHAR(18)
+  - name: SLEEP_DURATION_GRADE
+    expr: SLEEP_DURATION_GRADE
+    data_type: VARCHAR(10)
+  facts:
+  - name: DAWN_GLUCOSE_RISE
+    expr: DAWN_GLUCOSE_RISE
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: GLUCOSE_CV_PCT
+    expr: GLUCOSE_CV_PCT
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: GLUCOSE_MEAN
+    expr: GLUCOSE_MEAN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: SLEEP_DURATION_HOURS
+    expr: SLEEP_DURATION_HOURS
+    data_type: NUMBER(38,2)
+    access_modifier: public_access
+  - name: TIME_ABOVE_RANGE_PCT
+    expr: TIME_ABOVE_RANGE_PCT
+    data_type: NUMBER(23,2)
+    access_modifier: public_access
+  - name: TIME_BELOW_RANGE_PCT
+    expr: TIME_BELOW_RANGE_PCT
+    data_type: NUMBER(23,2)
+    access_modifier: public_access
+  - name: TIR_IN_RANGE_PCT
+    expr: TIR_IN_RANGE_PCT
+    data_type: NUMBER(23,2)
+    access_modifier: public_access
+- name: V_GOLD_SLEEP_SESSIONS
+  description: Individual sleep sessions.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_SLEEP_SESSIONS
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: IS_NAP
+    expr: IS_NAP
+    data_type: BOOLEAN
+  - name: IS_PRIMARY_SLEEP
+    expr: IS_PRIMARY_SLEEP
+    data_type: BOOLEAN
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: SLEEP_CONFIDENCE_LEVEL
+    expr: SLEEP_CONFIDENCE_LEVEL
+    data_type: VARCHAR(4)
+  - name: SLEEP_DATE
+    expr: SLEEP_DATE
+    data_type: DATE
+  - name: SLEEP_SESSION_ID
+    expr: SLEEP_SESSION_ID
+    data_type: VARCHAR(128)
+  facts:
+  - name: SESSION_FRAGMENTATION_INDEX
+    expr: SESSION_FRAGMENTATION_INDEX
+    data_type: NUMBER(25,6)
+    access_modifier: public_access
+  - name: SLEEP_DURATION_HOURS
+    expr: SLEEP_DURATION_HOURS
+    data_type: NUMBER(37,2)
+    access_modifier: public_access
+  - name: SLEEP_DURATION_MINUTES
+    expr: SLEEP_DURATION_MINUTES
+    data_type: NUMBER(36,6)
+    access_modifier: public_access
+  - name: TIME_IN_BED_MINUTES
+    expr: TIME_IN_BED_MINUTES
+    data_type: NUMBER(24,6)
+    access_modifier: public_access
+- name: V_GOLD_SLEEP_SESSIONS_PRIMARY
+  description: Primary sleep session per night.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_SLEEP_SESSIONS_PRIMARY
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: SLEEP_CONFIDENCE_LEVEL
+    expr: SLEEP_CONFIDENCE_LEVEL
+    data_type: VARCHAR(4)
+  - name: SLEEP_DATE
+    expr: SLEEP_DATE
+    data_type: DATE
+  - name: SLEEP_SESSION_ID
+    expr: SLEEP_SESSION_ID
+    data_type: VARCHAR(128)
+  facts:
+  - name: SLEEP_DURATION_HOURS
+    expr: SLEEP_DURATION_HOURS
+    data_type: NUMBER(37,2)
+    access_modifier: public_access
+  - name: SLEEP_DURATION_MINUTES
+    expr: SLEEP_DURATION_MINUTES
+    data_type: NUMBER(36,6)
+    access_modifier: public_access
+  - name: TIME_IN_BED_MINUTES
+    expr: TIME_IN_BED_MINUTES
+    data_type: NUMBER(24,6)
+    access_modifier: public_access
+- name: V_PATIENTS
+  description: The table contains records of patients with their demographic and contact information. Each record represents an individual patient and includes personal identifiers, demographic attributes, contact details, geographic information, account status, research participation preferences, and data source tracking.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_PATIENTS
+  dimensions:
+  - name: CREATED_AT
+    expr: CREATED_AT
+    data_type: TIMESTAMP_NTZ(9)
+  - name: CREATED_BY
+    expr: CREATED_BY
+    data_type: VARCHAR(16777216)
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: DATE_OF_BIRTH
+    expr: DATE_OF_BIRTH
+    data_type: DATE
+  - name: EFFECTIVE_DT
+    expr: EFFECTIVE_DT
+    data_type: TIMESTAMP_NTZ(9)
+  - name: EFFECTIVE_UNTIL_DT
+    expr: EFFECTIVE_UNTIL_DT
+    data_type: TIMESTAMP_NTZ(9)
+  - name: EMAIL_ADDRESS
+    expr: EMAIL_ADDRESS
+    data_type: VARCHAR(16777216)
+  - name: ETHNICITY
+    expr: ETHNICITY
+    data_type: VARCHAR(16777216)
+  - name: FIRST_NAME
+    expr: FIRST_NAME
+    data_type: VARCHAR(16777216)
+  - name: FULL_NAME
+    expr: FULL_NAME
+    data_type: VARCHAR(16777216)
+  - name: GENDER
+    expr: GENDER
+    data_type: VARCHAR(16777216)
+  - name: IS_RESEARCH_OPT_IN
+    expr: IS_RESEARCH_OPT_IN
+    data_type: BOOLEAN
+  - name: LAST_NAME
+    expr: LAST_NAME
+    data_type: VARCHAR(16777216)
+  - name: MODIFIED_AT
+    expr: MODIFIED_AT
+    data_type: TIMESTAMP_NTZ(9)
+  - name: MODIFIED_BY
+    expr: MODIFIED_BY
+    data_type: VARCHAR(16777216)
+  - name: PHONE_NUMBER
+    expr: PHONE_NUMBER
+    data_type: VARCHAR(16777216)
+  - name: STATUS
+    expr: STATUS
+    data_type: VARCHAR(16777216)
+  - name: USER_ID
+    expr: USER_ID
+    data_type: VARCHAR(16777216)
+  - name: ZIP_CODE
+    expr: ZIP_CODE
+    data_type: VARCHAR(16777216)
+  unique_keys:
+  - columns:
+    - USER_ID
+relationships:
+- name: BP_READINGS_TO_DAILY
+  left_table: V_GOLD_BP_READINGS
+  right_table: V_GOLD_BP_DAILY_SUMMARY
+  relationship_columns:
+  - left_column: DATASET_SOURCE
+    right_column: DATASET_SOURCE
+  - left_column: PARTICIPANT_ID
+    right_column: PARTICIPANT_ID
+  - left_column: MEASURED_DATE
+    right_column: READING_DATE
+  relationship_type: many_to_one
+- name: MEAL_SESSIONS_TO_DAILY
+  left_table: V_GOLD_MEAL_SESSIONS
+  right_table: V_GOLD_MEAL_DAILY
+  relationship_columns:
+  - left_column: DATASET_SOURCE
+    right_column: DATASET_SOURCE
+  - left_column: PARTICIPANT_ID
+    right_column: PARTICIPANT_ID
+  - left_column: MEAL_DATE
+    right_column: READING_DATE
+  relationship_type: many_to_one
+- name: SLEEP_SESSIONS_TO_DAILY
+  left_table: V_GOLD_SLEEP_SESSIONS
+  right_table: V_GOLD_SLEEP_DAILY
+  relationship_columns:
+  - left_column: DATASET_SOURCE
+    right_column: DATASET_SOURCE
+  - left_column: PARTICIPANT_ID
+    right_column: PARTICIPANT_ID
+  - left_column: SLEEP_DATE
+    right_column: SLEEP_DATE
+  relationship_type: many_to_one
+- name: PATIENTS_TO_EXERCISE_SESSIONS
+  left_table: V_GOLD_EXERCISE_SESSIONS
+  right_table: V_PATIENTS
+  relationship_columns:
+  - left_column: PARTICIPANT_ID
+    right_column: USER_ID
+  relationship_type: many_to_one
+- name: V_GOLD_CGM_SUBJECTS_TO_V_PATIENTS
+  left_table: V_GOLD_CGM_SUBJECTS
+  right_table: V_PATIENTS
+  relationship_columns:
+  - left_column: PARTICIPANT_ID
+    right_column: USER_ID
+  relationship_type: many_to_one
+- name: V_GOLD_MEAL_DAILY_TO_V_PATIENTS
+  left_table: V_GOLD_MEAL_DAILY
+  right_table: V_PATIENTS
+  relationship_columns:
+  - left_column: PARTICIPANT_ID
+    right_column: USER_ID
+  relationship_type: many_to_one
+- name: V_GOLD_SLEEP_DAILY_TO_V_PATIENTS
+  left_table: V_GOLD_SLEEP_DAILY
+  right_table: V_PATIENTS
+  relationship_columns:
+  - left_column: PARTICIPANT_ID
+    right_column: USER_ID
+  relationship_type: many_to_one
+custom_instructions:
+  question_categorization: |-
+    Route to this analyst when question contains:
+    - sleep, slept, sleeping, rest
+    - exercise, workout, activity, steps, walking, running
+    - meal, food, ate, eating, breakfast, lunch, dinner
+    - blood pressure, BP, systolic, diastolic
+    - heart rate, HR, pulse
+    - calories, burned, active energy
+  sql_generation: |-
+    This information is for educational and wellness purposes only.
+    It is not intended as medical advice, diagnosis, or treatment.
+    Always consult your healthcare provider for medical decisions.
+
+    NEVER provide:
+    - Diagnosis of medical conditions
+    - Medication recommendations or dosage changes
+    - Treatment plans or medical advice
+    - Predictions about disease progression
+
+    When user asks "should I..." about health:
+    - Respond with data only
+    - Add medical disclaimer
+    - Suggest consulting healthcare provider
+
+    Time interpretation rules:
+    - "today" = CURRENT_DATE()
+    - "this week" = Last 7 calendar days, excluding today
+    - "this month" = Last 30 calendar days, excluding today
+    - "recently" = Last 14 days
+    - Always filter: date_column < CURRENT_DATE()
+
+    RESPONSE STRUCTURE (MANDATORY):
+
+    1. SUMMARY FIRST (1-2 sentences max)
+       - Lead with the key metric value
+       - Keep it scannable and actionable
+       - Example: "Your TIR is 72% this week, up from 68% last week."
+
+    2. FOLLOW-UP SUGGESTIONS (always include 2-3)
+       - Offer deeper analysis options
+       - Frame as questions the user might want to ask
+       - Make them specific and actionable
+
+    FORMATTING RULES:
+    - Numbers: Round percentages to whole numbers, glucose to integers
+    - Comparisons: Include vs. previous period when relevant
+    - Brevity: If it can be said in fewer words, do it
+
+    EXAMPLE RESPONSE PATTERN:
+    Question: "How is my glucose control?"
+
+    Answer: "Your TIR is 74% over the last 7 days with average glucose of 128 mg/dL."
+
+    Suggestions:
+    - "Show daily TIR breakdown"
+    - "When do my highs usually happen?"
+    - "Compare to last month"
+
+    You are a lifestyle and activity assistant helping users understand how
+    daily behaviors affect their health metrics.
+
+    Focus areas:
+    - Sleep patterns and quality
+    - Exercise and workouts
+    - Meal timing and nutrition
+    - Blood pressure trends
+    - Correlations between lifestyle factors
+
+    ACTIVITY-SPECIFIC RESPONSE RULES:
+
+    SUMMARY ANSWERS:
+    - Sleep → "You slept X hours last night"
+    - Exercise → "X workout sessions this week, Y total minutes"
+    - BP → "Average BP: X/Y mmHg"
+    - Meals → "X meals logged, avg Y carbs/meal"
+
+    ALWAYS SUGGEST FOLLOW-UPS:
+    For sleep questions, suggest:
+    - "Show sleep trends this week"
+    - "How does sleep affect my glucose?"
+    - "What time did I usually fall asleep?"
+
+    For exercise questions, suggest:
+    - "Which workouts dropped my glucose most?"
+    - "Show workout intensity breakdown"
+    - "Compare morning vs evening workouts"
+
+    For meal questions, suggest:
+    - "Show meals by carb category"
+    - "Which meals had best glucose response?"
+    - "Compare weekday vs weekend eating"

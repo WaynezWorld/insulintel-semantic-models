@@ -5,7 +5,9 @@ on:
     paths:
       - 'semantic_views/**/*.yaml'
       - 'scripts/**/*.sql'
-      - 'scripts/validate_repo.py'
+      - 'scripts/**/*.py'
+      - 'app/**/*.py'
+      - 'pyproject.toml'
       - '.github/workflows/ci.yml'
       - 'README.md'
       - 'instructions/**/*.yaml'
@@ -15,7 +17,9 @@ on:
     paths:
       - 'semantic_views/**/*.yaml'
       - 'scripts/**/*.sql'
-      - 'scripts/validate_repo.py'
+      - 'scripts/**/*.py'
+      - 'app/**/*.py'
+      - 'pyproject.toml'
       - '.github/workflows/ci.yml'
       - 'README.md'
       - 'instructions/**/*.yaml'
@@ -35,5 +39,20 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Install package
+        run: pip install -e .
+
       - name: Run repository validator
         run: python scripts/validate_repo.py
+
+      - name: Build deploy artefacts
+        run: python scripts/build_deploy.py
+
+      - name: Commit deploy artefacts
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deploy/
+          git diff --cached --quiet && echo "No changes to commit" || \
+            (git commit -m "ci: rebuild deploy artefacts" && git push)

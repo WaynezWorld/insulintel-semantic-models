@@ -17,13 +17,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Bootstrap: make ``semantic_diff`` importable as a package.
+# Bootstrap: prefer pip-installed package; fall back to relative path.
 # ---------------------------------------------------------------------------
 _SCRIPT_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SCRIPT_DIR.parents[1]
 
-if str(_SCRIPT_DIR.parent) not in sys.path:
-    sys.path.insert(0, str(_SCRIPT_DIR.parent))
+try:
+    import semantic_diff  # noqa: F401
+except ImportError:
+    if str(_SCRIPT_DIR.parent) not in sys.path:
+        sys.path.insert(0, str(_SCRIPT_DIR.parent))
 
 from semantic_diff.canonical import AgentConfig, Snapshot
 from semantic_diff.normalize_yaml import load_yaml_semantic_view

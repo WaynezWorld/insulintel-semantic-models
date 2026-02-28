@@ -1,9 +1,10 @@
 """
 Convert repo YAML semantic-view files to canonical form.
 
-Handles camelCase → snake_case normalisation so that files using either
-convention (e.g. sem_activity.yaml uses camelCase relationship keys,
-sem_insulintel.yaml uses snake_case) produce identical canonical output.
+Handles camelCase → snake_case normalisation as a defensive measure.
+All source YAMLs in this repo are now standardised to snake_case, but
+the converter is retained for compatibility with external YAML files
+that may still use camelCase keys.
 """
 from __future__ import annotations
 

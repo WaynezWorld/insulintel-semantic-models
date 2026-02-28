@@ -9,13 +9,27 @@ This repo is primarily configuration (not an application): it stores semantic-vi
 
 ## Repository layout
 
-- `semantic_views/` — Snowflake Semantic View definitions
+- `semantic_views/` — Snowflake Semantic View definitions (source of truth)
   - `sem_insulintel.yaml` — **SEM_INSULINTEL** (CGM-focused analytics)
   - `sem_nhanes.yaml` — **SEM_NHANES** (NHANES 2021–2023 population metabolic analytics)
   - `sem_activity.yaml` — **SEM_ACTIVITY** (activity/lifestyle + glucose-context analytics)
+- `instructions/` — modular instruction prompts assembled into semantic views + agent
+  - `assembly.yaml` — manifest mapping modules → deployment targets
+  - `_global/` — shared modules (medical disclaimer, safety, time defaults, response format)
+  - `sem_*/` — per-view modules (identity, scope rules, routing keywords)
+  - `agent_insulintel/` — agent orchestration and response modules
+- `deploy/` — **auto-generated** deployment artefacts (do not edit manually)
+  - `sem_*.yaml` — semantic view YAMLs with `custom_instructions` baked in
+  - `deploy_agent.sql` — agent SQL with assembled instructions
+- `app/` — Streamlit admin panel for editing, previewing, diffing, and deploying
+  - `streamlit_app.py` — 5-tab UI (Editor, Preview, Diff, Live, Test)
+  - `deployer.py` — Snowflake deployment operations
 - `scripts/`
-  - `deploy.sql` — example Snowflake script to fetch this Git repo and deploy semantic views
-- `instructions/` — supplemental guidance / prompts per semantic model (folder structure present)
+  - `deploy.sql` — Snowflake script to fetch and deploy from `deploy/`
+  - `build_deploy.py` — generates `deploy/` artefacts from source
+  - `fn_insight_of_the_day.sql` — lifestyle→glucose correlation UDFs
+  - `validate_repo.py` — CI repository validator
+  - `semantic_diff/` — CLI diff engine for comparing repo vs Snowflake
 
 ## Semantic views included
 
@@ -59,9 +73,30 @@ You’ll need to adjust database/schema/repo object names to match your Snowflak
 
 ## Contributing / updating models
 
-1. Edit or add files under `semantic_views/`
+1. Edit or add files under `semantic_views/` and/or `instructions/`
 2. Commit and push to `main`
-3. Re-run the Snowflake deploy script (or your CI/CD equivalent)
+3. CI runs `validate_repo.py` + `build_deploy.py` and commits `deploy/` artefacts
+4. In Snowflake: run `scripts/deploy.sql` (or use the Streamlit admin panel)
+
+## Local setup
+
+```bash
+# Install editable package (enables `semantic-diff` CLI + clean imports)
+pip install -e .
+
+# Copy secrets template and fill in credentials
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+# Edit .streamlit/secrets.toml with your Snowflake account details
+
+# Run the admin panel
+streamlit run app/streamlit_app.py
+
+# CLI: build deploy artefacts locally
+python scripts/build_deploy.py
+
+# CLI: assemble and view instructions
+semantic-diff assemble --target all
+```
 
 ## CI and branch protection
 
@@ -84,3 +119,15 @@ To require this before merge:
 ## License
 
 No license file is currently included in this repository. If you intend this repo to be reused externally, consider adding a LICENSE.
+
+## Test Backlog
+
+The following test suites are planned (priority order):
+
+1. **`semantic_diff.assemble`** — assembly logic, orphan/missing detection, module concatenation
+2. **`semantic_diff.diff_engine`** — diff classification (BREAKING vs METADATA), edge cases
+3. **`semantic_diff.normalize_yaml` / `normalize_sf`** — normalisation correctness, camelCase→snake_case
+4. **`app.deployer`** — mock Snowflake connection, verify SQL generation, YAML injection
+5. **`scripts.validate_repo`** — repo validation rules, missing file detection
+6. **Integration** — end-to-end assemble → build_deploy → deploy round-trip
+7. **`scripts.build_deploy`** — verify generated artefacts contain custom_instructions

@@ -3,18 +3,18 @@ Export Snowflake semantic-view metadata via SnowSQL.
 """
 from __future__ import annotations
 
+import os
+import shutil
 import subprocess
 from pathlib import Path
 from typing import List, Optional
 
 
-SEMANTIC_VIEWS = [
-    "DB_INSULINTEL.SCH_SEMANTIC.SEM_INSULINTEL",
-    "DB_INSULINTEL.SCH_SEMANTIC.SEM_ACTIVITY",
-    "DB_INSULINTEL.SCH_SEMANTIC.SEM_NHANES",
-]
+from .constants import SEMANTIC_VIEW_FQNS
 
-SNOWSQL_PATH = r"C:\Program Files\Snowflake SnowSQL\snowsql.exe"
+SEMANTIC_VIEWS = SEMANTIC_VIEW_FQNS
+
+SNOWSQL_PATH = os.environ.get("SNOWSQL_PATH", shutil.which("snowsql") or "snowsql")
 
 
 def export_describe(

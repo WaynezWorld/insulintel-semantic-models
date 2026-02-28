@@ -1,0 +1,579 @@
+name: SEM_INSULINTEL
+description: CGM-focused semantic model for continuous glucose monitoring analytics. Covers glucose readings, time-in-range metrics, glucose episodes, and post-meal glucose response. Wellness/education only - not for diagnosis or treatment.
+tables:
+- name: V_GLD_WORKOUTS_DIABETES_SESSIONS
+  description: Exercise sessions with glucose context.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GLD_WORKOUTS_DIABETES_SESSIONS
+  dimensions:
+  - name: END_TS_UTC
+    expr: END_TS_UTC
+    data_type: TIMESTAMP_NTZ(9)
+  - name: EXERCISE_SESSION_ID
+    expr: EXERCISE_SESSION_ID
+    data_type: VARCHAR(128)
+  - name: INTENSITY_BAND
+    expr: INTENSITY_BAND
+    data_type: VARCHAR(16777216)
+  - name: OBSERVED_DIP_FLAG
+    expr: OBSERVED_DIP_FLAG
+    data_type: BOOLEAN
+  - name: START_TS_UTC
+    expr: START_TS_UTC
+    data_type: TIMESTAMP_NTZ(9)
+  - name: USER_APP_ID
+    expr: USER_APP_ID
+    data_type: VARCHAR(64)
+  - name: WORKOUT_ACTIVITY_TYPE_NAME
+    expr: WORKOUT_ACTIVITY_TYPE_NAME
+    data_type: VARCHAR(10)
+  facts:
+  - name: ACTIVE_ENERGY_KCAL
+    expr: ACTIVE_ENERGY_KCAL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: AVG_METS
+    expr: AVG_METS
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: DURATION_MINUTES
+    expr: DURATION_MINUTES
+    data_type: NUMBER(24,6)
+    access_modifier: public_access
+  - name: GLUCOSE_CHANGE_2H
+    description: Glucose change 2h post-workout
+    expr: GLUCOSE_CHANGE_2H
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: POST_GLUCOSE_MEAN_120MIN
+    description: Post-workout glucose
+    expr: POST_GLUCOSE_MEAN_120MIN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: PRE_GLUCOSE_MEAN_30MIN
+    description: Pre-workout glucose
+    expr: PRE_GLUCOSE_MEAN_30MIN
+    data_type: FLOAT
+    access_modifier: public_access
+  metrics:
+  - name: AVG_GLUCOSE_CHANGE_2H
+    expr: AVG(GLUCOSE_CHANGE_2H)
+    access_modifier: public_access
+  - name: TOTAL_WORKOUT_MINUTES
+    expr: SUM(DURATION_MINUTES)
+    access_modifier: public_access
+  - name: WORKOUT_SESSION_COUNT
+    expr: COUNT(DISTINCT EXERCISE_SESSION_ID)
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - USER_APP_ID
+    - END_TS_UTC
+- name: V_GOLD_CGM_UNIFIED
+  description: Unified CGM readings from production and research datasets.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_CGM_UNIFIED
+  dimensions:
+  - name: DATA_SOURCE
+    expr: DATA_SOURCE
+    data_type: VARCHAR(16777216)
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: DEVICE_TYPE
+    expr: DEVICE_TYPE
+    data_type: VARCHAR(16777216)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(134217728)
+  - name: READING_TS_UTC
+    expr: READING_TS_UTC
+    data_type: TIMESTAMP_NTZ(9)
+  - name: READING_TYPE
+    expr: READING_TYPE
+    data_type: VARCHAR(16777216)
+  facts:
+  - name: GLUCOSE_CONFIDENCE
+    expr: GLUCOSE_CONFIDENCE
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: GLUCOSE_MGDL
+    description: Glucose reading in mg/dL
+    expr: GLUCOSE_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  metrics:
+  - name: AVG_GLUCOSE
+    description: Average glucose level
+    expr: AVG(GLUCOSE_MGDL)
+    access_modifier: public_access
+  - name: LATEST_READING_TIMESTAMP
+    expr: MAX(READING_TS_UTC)
+    access_modifier: public_access
+  - name: READING_COUNT
+    description: Total CGM readings
+    expr: COUNT(*)
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - DATASET_SOURCE
+    - PARTICIPANT_ID
+    - READING_TS_UTC
+- name: V_GOLD_GLUCOSE_DAILY_SUMMARY
+  description: Daily glucose summary with mean, variability, and TIR metrics.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_GLUCOSE_DAILY_SUMMARY
+  dimensions:
+  - name: DATA_QUALITY_GRADE
+    expr: DATA_QUALITY_GRADE
+    data_type: VARCHAR(4)
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: MEETS_ADA_TARGETS
+    expr: MEETS_ADA_TARGETS
+    data_type: NUMBER(1,0)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: READING_DATE
+    expr: READING_DATE
+    data_type: DATE
+  facts:
+  - name: DATA_COVERAGE_PCT
+    expr: DATA_COVERAGE_PCT
+    data_type: NUMBER(28,1)
+    access_modifier: public_access
+  - name: GLUCOSE_CV_PCT
+    expr: GLUCOSE_CV_PCT
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: GLUCOSE_MAX
+    expr: GLUCOSE_MAX
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: GLUCOSE_MEAN
+    description: Mean glucose for the day
+    expr: GLUCOSE_MEAN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: GLUCOSE_MIN
+    expr: GLUCOSE_MIN
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: GLUCOSE_STD
+    expr: GLUCOSE_STD
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: GMI_PCT
+    description: Glucose Management Indicator
+    expr: GMI_PCT
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: STABILITY_SCORE_0_100
+    expr: STABILITY_SCORE_0_100
+    data_type: NUMBER(6,2)
+    access_modifier: public_access
+  - name: TIME_ABOVE_RANGE_PCT
+    expr: TIME_ABOVE_RANGE_PCT
+    data_type: NUMBER(23,2)
+    access_modifier: public_access
+  - name: TIME_BELOW_RANGE_PCT
+    expr: TIME_BELOW_RANGE_PCT
+    data_type: NUMBER(23,2)
+    access_modifier: public_access
+  - name: TIR_IN_RANGE_PCT
+    description: Time in range 70-180 (%)
+    expr: TIR_IN_RANGE_PCT
+    data_type: NUMBER(23,2)
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - DATASET_SOURCE
+    - PARTICIPANT_ID
+    - READING_DATE
+- name: V_GOLD_GLUCOSE_EPISODES
+  description: Detected hypo/hyperglycemic episodes.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_GLUCOSE_EPISODES
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: EPISODE_DATE
+    expr: EPISODE_DATE
+    data_type: DATE
+  - name: EPISODE_END_TS
+    expr: EPISODE_END_TS
+    data_type: TIMESTAMP_NTZ(0)
+  - name: EPISODE_SEVERITY
+    expr: EPISODE_SEVERITY
+    data_type: FLOAT
+  - name: EPISODE_START_TS
+    expr: EPISODE_START_TS
+    data_type: TIMESTAMP_NTZ(0)
+  - name: EPISODE_TYPE
+    expr: EPISODE_TYPE
+    data_type: VARCHAR(16777216)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  facts:
+  - name: DURATION_MINUTES
+    expr: DURATION_MINUTES
+    data_type: NUMBER(25,6)
+    access_modifier: public_access
+  - name: NADIR_GLUCOSE
+    description: Lowest glucose in episode
+    expr: NADIR_GLUCOSE
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: PEAK_GLUCOSE
+    description: Highest glucose in episode
+    expr: PEAK_GLUCOSE
+    data_type: FLOAT
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - DATASET_SOURCE
+    - PARTICIPANT_ID
+    - EPISODE_TYPE
+    - EPISODE_START_TS
+- name: V_GOLD_MEAL_POSTMEAL
+  description: Post-meal glucose response analysis.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_MEAL_POSTMEAL
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: MEAL_END_TS
+    expr: MEAL_END_TS
+    data_type: TIMESTAMP_NTZ(9)
+  - name: MEAL_START_TS
+    expr: MEAL_START_TS
+    data_type: TIMESTAMP_NTZ(9)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: SESSION_ID
+    expr: SESSION_ID
+    data_type: VARCHAR(128)
+  facts:
+  - name: CARBS_G
+    expr: CARBS_G
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: POSTMEAL_AVG_0_120
+    description: Avg glucose 0-120 min post-meal
+    expr: POSTMEAL_AVG_0_120
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: POSTMEAL_MAX_0_120
+    expr: POSTMEAL_MAX_0_120
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: POSTMEAL_MIN_0_120
+    expr: POSTMEAL_MIN_0_120
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: TIME_TO_PEAK_MINUTES
+    expr: TIME_TO_PEAK_MINUTES
+    data_type: NUMBER(18,0)
+    access_modifier: public_access
+  metrics:
+  - name: MEAL_EVENT_COUNT
+    expr: COUNT(SESSION_ID)
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - DATASET_SOURCE
+    - PARTICIPANT_ID
+    - MEAL_START_TS
+- name: V_GOLD_TIR_ROLLUPS
+  description: Time-in-range rollups (7d, 14d, 30d windows).
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_GOLD_TIR_ROLLUPS
+  dimensions:
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: HYPO_RISK_LEVEL
+    expr: HYPO_RISK_LEVEL
+    data_type: VARCHAR(18)
+  - name: MEETS_ADA_TARGETS
+    expr: MEETS_ADA_TARGETS
+    data_type: NUMBER(1,0)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(64)
+  - name: TIR_GRADE
+    expr: TIR_GRADE
+    data_type: VARCHAR(17)
+  - name: WINDOW_DATE
+    expr: WINDOW_DATE
+    data_type: DATE
+  - name: WINDOW_TYPE
+    expr: WINDOW_TYPE
+    data_type: VARCHAR(11)
+  facts:
+  - name: COVERAGE_RATIO
+    expr: COVERAGE_RATIO
+    data_type: NUMBER(25,4)
+    access_modifier: public_access
+  - name: TIME_ABOVE_RANGE_PCT
+    expr: TIME_ABOVE_RANGE_PCT
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: TIME_BELOW_RANGE_PCT
+    expr: TIME_BELOW_RANGE_PCT
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: TIME_IN_RANGE_PCT
+    expr: TIME_IN_RANGE_PCT
+    data_type: FLOAT
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - DATASET_SOURCE
+    - PARTICIPANT_ID
+    - WINDOW_DATE
+    - WINDOW_TYPE
+- name: V_PATIENTS
+  description: The table contains records of patients with their demographic and contact information. Each record represents an individual patient and includes personal identifiers, demographic attributes, contact details, geographic information, account status, research participation preferences, and data source tracking.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_PATIENTS
+  dimensions:
+  - name: CREATED_AT
+    expr: CREATED_AT
+    data_type: TIMESTAMP_NTZ(9)
+  - name: CREATED_BY
+    expr: CREATED_BY
+    data_type: VARCHAR(16777216)
+  - name: DATASET_SOURCE
+    expr: DATASET_SOURCE
+    data_type: VARCHAR(10)
+  - name: DATE_OF_BIRTH
+    expr: DATE_OF_BIRTH
+    data_type: DATE
+  - name: EFFECTIVE_DT
+    expr: EFFECTIVE_DT
+    data_type: TIMESTAMP_NTZ(9)
+  - name: EFFECTIVE_UNTIL_DT
+    expr: EFFECTIVE_UNTIL_DT
+    data_type: TIMESTAMP_NTZ(9)
+  - name: EMAIL_ADDRESS
+    expr: EMAIL_ADDRESS
+    data_type: VARCHAR(16777216)
+  - name: ETHNICITY
+    expr: ETHNICITY
+    data_type: VARCHAR(16777216)
+  - name: FIRST_NAME
+    expr: FIRST_NAME
+    data_type: VARCHAR(16777216)
+  - name: FULL_NAME
+    expr: FULL_NAME
+    data_type: VARCHAR(16777216)
+  - name: GENDER
+    expr: GENDER
+    data_type: VARCHAR(16777216)
+  - name: IS_RESEARCH_OPT_IN
+    expr: IS_RESEARCH_OPT_IN
+    data_type: BOOLEAN
+  - name: LAST_NAME
+    expr: LAST_NAME
+    data_type: VARCHAR(16777216)
+  - name: MODIFIED_AT
+    expr: MODIFIED_AT
+    data_type: TIMESTAMP_NTZ(9)
+  - name: MODIFIED_BY
+    expr: MODIFIED_BY
+    data_type: VARCHAR(16777216)
+  - name: PHONE_NUMBER
+    expr: PHONE_NUMBER
+    data_type: VARCHAR(16777216)
+  - name: STATUS
+    expr: STATUS
+    data_type: VARCHAR(16777216)
+  - name: USER_ID
+    expr: USER_ID
+    data_type: VARCHAR(16777216)
+  - name: ZIP_CODE
+    expr: ZIP_CODE
+    data_type: VARCHAR(16777216)
+  unique_keys:
+  - columns:
+    - USER_ID
+relationships:
+- name: EPISODES_TO_DAILY
+  left_table: V_GOLD_GLUCOSE_EPISODES
+  right_table: V_GOLD_GLUCOSE_DAILY_SUMMARY
+  relationship_columns:
+  - left_column: DATASET_SOURCE
+    right_column: DATASET_SOURCE
+  - left_column: PARTICIPANT_ID
+    right_column: PARTICIPANT_ID
+  - left_column: EPISODE_DATE
+    right_column: READING_DATE
+  relationship_type: many_to_one
+- name: TIR_TO_DAILY
+  left_table: V_GOLD_TIR_ROLLUPS
+  right_table: V_GOLD_GLUCOSE_DAILY_SUMMARY
+  relationship_columns:
+  - left_column: DATASET_SOURCE
+    right_column: DATASET_SOURCE
+  - left_column: PARTICIPANT_ID
+    right_column: PARTICIPANT_ID
+  - left_column: WINDOW_DATE
+    right_column: READING_DATE
+  relationship_type: many_to_one
+- name: V_GOLD_CGM_UNIFIED_TO_V_PATIENTS
+  left_table: V_GOLD_CGM_UNIFIED
+  right_table: V_PATIENTS
+  relationship_columns:
+  - left_column: PARTICIPANT_ID
+    right_column: USER_ID
+  relationship_type: many_to_one
+- name: V_GOLD_GLUCOSE_DAILY_SUMMARY_TO_V_PATIENTS
+  left_table: V_GOLD_GLUCOSE_DAILY_SUMMARY
+  right_table: V_PATIENTS
+  relationship_columns:
+  - left_column: PARTICIPANT_ID
+    right_column: USER_ID
+  relationship_type: many_to_one
+- name: V_GOLD_GLUCOSE_EPISODES_TO_V_PATIENTS
+  left_table: V_GOLD_GLUCOSE_EPISODES
+  right_table: V_PATIENTS
+  relationship_columns:
+  - left_column: PARTICIPANT_ID
+    right_column: USER_ID
+  relationship_type: many_to_one
+custom_instructions:
+  question_categorization: |-
+    Route to this analyst when question contains:
+    - glucose, sugar, blood sugar
+    - CGM, continuous glucose
+    - TIR, time in range, time-in-range
+    - hypo, hypoglycemia, low blood sugar
+    - hyper, hyperglycemia, high blood sugar
+    - A1C, HbA1c, GMI
+    - spike, crash, dip
+    - fasting glucose, morning glucose
+    - post-meal, after eating
+  sql_generation: |-
+    This information is for educational and wellness purposes only.
+    It is not intended as medical advice, diagnosis, or treatment.
+    Always consult your healthcare provider for medical decisions.
+
+    NEVER provide:
+    - Diagnosis of medical conditions
+    - Medication recommendations or dosage changes
+    - Treatment plans or medical advice
+    - Predictions about disease progression
+
+    When user asks "should I..." about health:
+    - Respond with data only
+    - Add medical disclaimer
+    - Suggest consulting healthcare provider
+
+    Time interpretation rules:
+    - "today" = CURRENT_DATE()
+    - "this week" = Last 7 calendar days, excluding today
+    - "this month" = Last 30 calendar days, excluding today
+    - "recently" = Last 14 days
+    - Always filter: date_column < CURRENT_DATE()
+
+    RESPONSE STRUCTURE (MANDATORY):
+
+    1. SUMMARY FIRST (1-2 sentences max)
+       - Lead with the key metric value
+       - Keep it scannable and actionable
+       - Example: "Your TIR is 72% this week, up from 68% last week."
+
+    2. FOLLOW-UP SUGGESTIONS (always include 2-3)
+       - Offer deeper analysis options
+       - Frame as questions the user might want to ask
+       - Make them specific and actionable
+
+    FORMATTING RULES:
+    - Numbers: Round percentages to whole numbers, glucose to integers
+    - Comparisons: Include vs. previous period when relevant
+    - Brevity: If it can be said in fewer words, do it
+
+    EXAMPLE RESPONSE PATTERN:
+    Question: "How is my glucose control?"
+
+    Answer: "Your TIR is 74% over the last 7 days with average glucose of 128 mg/dL."
+
+    Suggestions:
+    - "Show daily TIR breakdown"
+    - "When do my highs usually happen?"
+    - "Compare to last month"
+
+    You are a CGM data assistant helping users understand their glucose patterns.
+    Your role is to make continuous glucose monitoring data accessible to non-experts.
+
+    Focus areas:
+    - Glucose trends and patterns
+    - Time-in-range metrics
+    - Post-meal glucose response
+    - Exercise impact on glucose
+
+    Data access by user type:
+
+    PATIENT:
+    - Filter all queries to their USER_APP_ID only
+    - Use possessive language: "Your glucose", "Your TIR"
+
+    PROVIDER:
+    - Can view linked patients via USER_LINKS table
+    - Use: "Patient's glucose", "[Name]'s TIR"
+    - Require patient_id parameter for queries
+
+    RESEARCHER:
+    - Aggregate queries only (no individual identification)
+    - Use: "Participants", "The cohort"
+    - Require GROUP BY or aggregate functions
+
+    CGM-SPECIFIC RESPONSE RULES:
+
+    SUMMARY ANSWERS (keep brief):
+    - TIR questions → "Your TIR is X%"
+    - Glucose average → "Average glucose: X mg/dL"
+    - Episodes → "You had X hypo events this week"
+    - Trends → "Your glucose is trending [up/down/stable]"
+
+    ALWAYS SUGGEST FOLLOW-UPS:
+    For TIR questions, suggest:
+    - "Break down by day"
+    - "Show time above/below range"
+    - "Compare to previous week"
+
+    For glucose patterns, suggest:
+    - "Show hourly patterns"
+    - "When are my highs/lows?"
+    - "How does this compare to my baseline?"
+
+    For meal impact, suggest:
+    - "Which meals caused the biggest spikes?"
+    - "Show post-meal patterns"
+    - "Compare breakfast vs dinner response"
+
+    AVOID:
+    - Long explanations of what metrics mean
+    - Medical interpretations
+    - Unsolicited advice

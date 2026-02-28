@@ -1,0 +1,417 @@
+name: SEM_NHANES
+description: NHANES 2021-2023 population health analytics semantic model linking raw metabolic data with derived analytics summaries.
+tables:
+- name: V_GOLD_NHANES_METABOLIC_SUMMARY
+  description: NHANES 2021-2023 population metabolic analytics with glycemic status, lipid risk categories, HOMA-IR, and metabolic syndrome.
+  base_table:
+    database: WELLNESS_DEV
+    schema: GOLD
+    table: V_GOLD_NHANES_METABOLIC_SUMMARY
+  dimensions:
+  - name: A1C_RISK_BAND
+    expr: A1C_RISK_BAND
+    data_type: VARCHAR(25)
+  - name: AGE_GROUP
+    expr: AGE_GROUP
+    data_type: VARCHAR(19)
+  - name: AGE_YEARS
+    expr: AGE_YEARS
+    data_type: NUMBER(38,0)
+  - name: BMI_CATEGORY
+    expr: BMI_CATEGORY
+    data_type: VARCHAR(15)
+  - name: BP_CATEGORY
+    expr: BP_CATEGORY
+    data_type: VARCHAR(11)
+  - name: DATA_COMPLETENESS_SCORE
+    expr: DATA_COMPLETENESS_SCORE
+    data_type: NUMBER(4,0)
+  - name: DATA_SOURCE
+    expr: DATA_SOURCE
+    data_type: VARCHAR(16)
+  - name: GENDER
+    expr: GENDER
+    data_type: VARCHAR(7)
+  - name: GLYCEMIC_STATUS
+    expr: GLYCEMIC_STATUS
+    data_type: VARCHAR(11)
+  - name: HAS_BP_DATA
+    expr: HAS_BP_DATA
+    data_type: NUMBER(1,0)
+  - name: HAS_GLYCEMIC_DATA
+    expr: HAS_GLYCEMIC_DATA
+    data_type: NUMBER(1,0)
+  - name: HAS_INSULIN_DATA
+    expr: HAS_INSULIN_DATA
+    data_type: NUMBER(1,0)
+  - name: HAS_LIPID_DATA
+    expr: HAS_LIPID_DATA
+    data_type: NUMBER(1,0)
+  - name: HAS_METABOLIC_SYNDROME
+    expr: HAS_METABOLIC_SYNDROME
+    data_type: NUMBER(1,0)
+  - name: HDL_CATEGORY
+    expr: HDL_CATEGORY
+    data_type: VARCHAR(17)
+  - name: HOMA_IR_CATEGORY
+    expr: HOMA_IR_CATEGORY
+    data_type: VARCHAR(17)
+  - name: LDL_CATEGORY
+    expr: LDL_CATEGORY
+    data_type: VARCHAR(15)
+  - name: PARTICIPANT_ID
+    expr: PARTICIPANT_ID
+    data_type: VARCHAR(134217728)
+  - name: RACE_ETHNICITY
+    expr: RACE_ETHNICITY
+    data_type: VARCHAR(18)
+  - name: SURVEY_CYCLE_NAME
+    expr: SURVEY_CYCLE_NAME
+    data_type: VARCHAR(16)
+  - name: SURVEY_YEARS
+    expr: SURVEY_YEARS
+    data_type: VARCHAR(9)
+  - name: TOTAL_CHOL_CATEGORY
+    expr: TOTAL_CHOL_CATEGORY
+    data_type: VARCHAR(15)
+  - name: TRIGLYCERIDES_CATEGORY
+    expr: TRIGLYCERIDES_CATEGORY
+    data_type: VARCHAR(15)
+  facts:
+  - name: BMI
+    expr: BMI
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: DBP_MEAN_MMHG
+    expr: DBP_MEAN_MMHG
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: FASTING_GLUCOSE_MGDL
+    expr: FASTING_GLUCOSE_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: FASTING_HOURS
+    expr: FASTING_HOURS
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: FASTING_INSULIN_UU_ML
+    expr: FASTING_INSULIN_UU_ML
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: HBA1C_PCT
+    expr: HBA1C_PCT
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: HDL_CHOLESTEROL_MGDL
+    expr: HDL_CHOLESTEROL_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: HEIGHT_CM
+    expr: HEIGHT_CM
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: HOMA_IR
+    expr: HOMA_IR
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: LDL_CHOLESTEROL_MGDL
+    expr: LDL_CHOLESTEROL_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: METABOLIC_SYNDROME_RISK_FACTORS
+    expr: METABOLIC_SYNDROME_RISK_FACTORS
+    data_type: NUMBER(5,0)
+    access_modifier: public_access
+  - name: NON_HDL_CHOLESTEROL_MGDL
+    expr: NON_HDL_CHOLESTEROL_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: SAMPLE_WEIGHT
+    expr: SAMPLE_WEIGHT
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: SBP_MEAN_MMHG
+    expr: SBP_MEAN_MMHG
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: TOTAL_CHOLESTEROL_MGDL
+    expr: TOTAL_CHOLESTEROL_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: TRIGLYCERIDES_MGDL
+    expr: TRIGLYCERIDES_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: WAIST_CIRCUMFERENCE_CM
+    expr: WAIST_CIRCUMFERENCE_CM
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: WEIGHT_KG
+    expr: WEIGHT_KG
+    data_type: FLOAT
+    access_modifier: public_access
+  metrics:
+  - name: AVG_BMI
+    description: Average BMI
+    expr: AVG(BMI)
+    access_modifier: public_access
+  - name: AVG_HBA1C
+    description: Average HbA1c
+    expr: AVG(HBA1C_PCT)
+    access_modifier: public_access
+  - name: DIABETES_RATE
+    description: Diabetes percentage
+    expr: 100.0 * SUM(CASE WHEN GLYCEMIC_STATUS = 'Diabetes' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)
+    access_modifier: public_access
+  - name: METABOLIC_SYNDROME_RATE
+    description: Metabolic syndrome percentage
+    expr: 100.0 * SUM(HAS_METABOLIC_SYNDROME) / NULLIF(COUNT(*), 0)
+    access_modifier: public_access
+  - name: PARTICIPANT_COUNT
+    description: Total unique participants
+    expr: COUNT(DISTINCT PARTICIPANT_ID)
+    access_modifier: public_access
+  - name: PREDIABETES_RATE
+    description: Prediabetes percentage
+    expr: 100.0 * SUM(CASE WHEN GLYCEMIC_STATUS = 'Prediabetes' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0)
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - PARTICIPANT_ID
+- name: V_NHANES_METABOLIC_2021_2023
+  description: NHANES 2021-2023 unified metabolic dataset. ~11K participants with demographics, body measures, glycemic markers, lipids, and blood pressure.
+  base_table:
+    database: DB_INSULINTEL
+    schema: SCH_SEMANTIC
+    table: V_NHANES_METABOLIC_2021_2023
+  dimensions:
+  - name: AGE_YEARS
+    expr: AGE_YEARS
+    data_type: NUMBER(38,0)
+  - name: EDUCATION_CODE
+    expr: EDUCATION_CODE
+    data_type: NUMBER(38,0)
+  - name: HAS_BLOOD_PRESSURE
+    expr: HAS_BLOOD_PRESSURE
+    data_type: NUMBER(1,0)
+  - name: HAS_BODY_MEASURES
+    expr: HAS_BODY_MEASURES
+    data_type: NUMBER(1,0)
+  - name: HAS_FASTING_GLUCOSE
+    expr: HAS_FASTING_GLUCOSE
+    data_type: NUMBER(1,0)
+  - name: HAS_FASTING_INSULIN
+    expr: HAS_FASTING_INSULIN
+    data_type: NUMBER(1,0)
+  - name: HAS_HBA1C
+    expr: HAS_HBA1C
+    data_type: NUMBER(1,0)
+  - name: HAS_LIPIDS
+    expr: HAS_LIPIDS
+    data_type: NUMBER(1,0)
+  - name: PARTICIPANT_ID
+    description: Participant identifier (SEQN cast to VARCHAR)
+    expr: TO_VARCHAR(SEQN)
+    data_type: VARCHAR(134217728)
+  - name: PSU
+    expr: PSU
+    data_type: NUMBER(38,0)
+  - name: RACE_ETHNICITY_CODE
+    expr: RACE_ETHNICITY_CODE
+    data_type: NUMBER(38,0)
+  - name: SEQN
+    description: NHANES sequence number
+    expr: SEQN
+    data_type: NUMBER(38,0)
+  - name: SEX_CODE
+    expr: SEX_CODE
+    data_type: NUMBER(38,0)
+  - name: STRATA
+    expr: STRATA
+    data_type: NUMBER(38,0)
+  - name: SURVEY_CYCLE
+    expr: SURVEY_CYCLE
+    data_type: VARCHAR(9)
+  - name: SURVEY_YEAR_MID
+    expr: SURVEY_YEAR_MID
+    data_type: NUMBER(4,0)
+  facts:
+  - name: BMI
+    expr: BMI
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: DBP_MEAN_MMHG
+    expr: DBP_MEAN_MMHG
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: FASTING_GLUCOSE_MGDL
+    expr: FASTING_GLUCOSE_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: FASTING_INSULIN_UU_ML
+    expr: FASTING_INSULIN_UU_ML
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: FASTING_WEIGHT_2YR
+    expr: FASTING_WEIGHT_2YR
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: HBA1C_PCT
+    expr: HBA1C_PCT
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: HDL_CHOLESTEROL_MGDL
+    expr: HDL_CHOLESTEROL_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: HEIGHT_CM
+    expr: HEIGHT_CM
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: HIP_CIRCUMFERENCE_CM
+    expr: HIP_CIRCUMFERENCE_CM
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: INTERVIEW_WEIGHT_2YR
+    expr: INTERVIEW_WEIGHT_2YR
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: LDL_CHOLESTEROL_MGDL
+    expr: LDL_CHOLESTEROL_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: MEC_WEIGHT_2YR
+    expr: MEC_WEIGHT_2YR
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: POVERTY_INCOME_RATIO
+    expr: POVERTY_INCOME_RATIO
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: SBP_MEAN_MMHG
+    expr: SBP_MEAN_MMHG
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: TOTAL_CHOLESTEROL_MGDL
+    expr: TOTAL_CHOLESTEROL_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: TRIGLYCERIDES_MGDL
+    expr: TRIGLYCERIDES_MGDL
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: WAIST_CIRCUMFERENCE_CM
+    expr: WAIST_CIRCUMFERENCE_CM
+    data_type: FLOAT
+    access_modifier: public_access
+  - name: WEIGHT_KG
+    expr: WEIGHT_KG
+    data_type: FLOAT
+    access_modifier: public_access
+  primary_key:
+    columns:
+    - SEQN
+  unique_keys:
+  - columns:
+    - PARTICIPANT_ID
+relationships:
+- name: SUMMARY_TO_RAW
+  left_table: V_GOLD_NHANES_METABOLIC_SUMMARY
+  right_table: V_NHANES_METABOLIC_2021_2023
+  relationship_columns:
+  - left_column: PARTICIPANT_ID
+    right_column: PARTICIPANT_ID
+  relationship_type: one_to_one
+custom_instructions:
+  question_categorization: |-
+    Route to this analyst when question contains:
+    - population, national, US, American
+    - average, typical, normal range
+    - NHANES, survey
+    - prevalence, rate, percentage of people
+    - compare to others, how do I compare
+    - demographics, age group, gender differences
+  sql_generation: |-
+    This information is for educational and wellness purposes only.
+    It is not intended as medical advice, diagnosis, or treatment.
+    Always consult your healthcare provider for medical decisions.
+
+    NEVER provide:
+    - Diagnosis of medical conditions
+    - Medication recommendations or dosage changes
+    - Treatment plans or medical advice
+    - Predictions about disease progression
+
+    When user asks "should I..." about health:
+    - Respond with data only
+    - Add medical disclaimer
+    - Suggest consulting healthcare provider
+
+    Time interpretation rules:
+    - "today" = CURRENT_DATE()
+    - "this week" = Last 7 calendar days, excluding today
+    - "this month" = Last 30 calendar days, excluding today
+    - "recently" = Last 14 days
+    - Always filter: date_column < CURRENT_DATE()
+
+    RESPONSE STRUCTURE (MANDATORY):
+
+    1. SUMMARY FIRST (1-2 sentences max)
+       - Lead with the key metric value
+       - Keep it scannable and actionable
+       - Example: "Your TIR is 72% this week, up from 68% last week."
+
+    2. FOLLOW-UP SUGGESTIONS (always include 2-3)
+       - Offer deeper analysis options
+       - Frame as questions the user might want to ask
+       - Make them specific and actionable
+
+    FORMATTING RULES:
+    - Numbers: Round percentages to whole numbers, glucose to integers
+    - Comparisons: Include vs. previous period when relevant
+    - Brevity: If it can be said in fewer words, do it
+
+    EXAMPLE RESPONSE PATTERN:
+    Question: "How is my glucose control?"
+
+    Answer: "Your TIR is 74% over the last 7 days with average glucose of 128 mg/dL."
+
+    Suggestions:
+    - "Show daily TIR breakdown"
+    - "When do my highs usually happen?"
+    - "Compare to last month"
+
+    You are a population health reference assistant providing context from
+    the NHANES (National Health and Nutrition Examination Survey) dataset.
+
+    Focus areas:
+    - US population health statistics
+    - Prevalence rates (diabetes, prediabetes, obesity)
+    - Demographic health comparisons
+    - Reference ranges and benchmarks
+
+    Important: This is cross-sectional survey data, not individual user data.
+    Always use educational framing: "In the US population..."
+
+    POPULATION DATA RESPONSE RULES:
+
+    SUMMARY ANSWERS:
+    - Always frame as population statistics
+    - Lead with the key percentage or average
+    - Example: "27% of US adults have prediabetes"
+
+    ALWAYS SUGGEST FOLLOW-UPS:
+    For prevalence questions, suggest:
+    - "Break down by age group"
+    - "Compare by gender"
+    - "Show trend by BMI category"
+
+    For comparison questions, suggest:
+    - "How does this vary by ethnicity?"
+    - "What about different income levels?"
+    - "Show the full distribution"
+
+    FRAMING:
+    - Use "In the US population..." or "Among Americans..."
+    - Cite NHANES 2021-2023 as source
+    - Note this is survey data, not real-time
