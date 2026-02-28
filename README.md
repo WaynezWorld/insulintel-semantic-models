@@ -60,6 +60,49 @@ Covers:
 - Derived “gold” summary analytics (risk categories, HOMA-IR, metabolic syndrome, etc.)
 - A declared relationship between summary and raw tables via `PARTICIPANT_ID`
 
+## Instruction assembly pipeline
+
+Instructions for semantic views and the Cortex Agent are assembled from
+modular YAML files under `instructions/`:
+
+```
+instructions/
+  assembly.yaml          ← manifest: maps modules → deployment targets
+  _global/               ← shared modules (disclaimer, safety, time defaults)
+  sem_insulintel/        ← per-view modules (identity, scope, routing)
+  sem_activity/
+  sem_nhanes/
+  agent_insulintel/      ← agent orchestration + response modules
+```
+
+The `assembly.yaml` manifest declares which modules are concatenated into each
+output field (`sql_generation`, `question_categorization` for semantic views;
+`orchestration_instructions`, `response_instructions` for agents).
+
+**Build pipeline:**
+
+1. `scripts/build_deploy.py` reads `assembly.yaml`, concatenates module content
+2. Injects assembled text into semantic view YAMLs → `deploy/sem_*.yaml`
+3. Generates agent SQL with full specification → `deploy/deploy_agent.sql`
+
+The Streamlit admin panel (`app/streamlit_app.py`) provides a GUI for the same
+pipeline: edit modules → preview assembled text → deploy to Snowflake.
+
+## Streamlit admin panel
+
+The admin panel has five tabs:
+
+| Tab | Purpose |
+|-----|---------|
+| **Editor** | Edit instruction modules grouped by target |
+| **Preview** | See assembled instructions before deploying |
+| **Diff** | Compare repo instructions vs live Snowflake state |
+| **Live** | View current Snowflake semantic view / agent state |
+| **Test** | Chat with `CORTEX.COMPLETE` using your assembled instructions |
+
+Start it with `streamlit run app/streamlit_app.py`. Requires `.streamlit/secrets.toml`
+with Snowflake credentials (see Local setup below).
+
 ## Deploying to Snowflake (example)
 
 See: `scripts/deploy.sql`
@@ -120,14 +163,26 @@ To require this before merge:
 
 No license file is currently included in this repository. If you intend this repo to be reused externally, consider adding a LICENSE.
 
-## Test Backlog
+## Testing
 
-The following test suites are planned (priority order):
+Run the test suite with:
 
-1. **`semantic_diff.assemble`** — assembly logic, orphan/missing detection, module concatenation
-2. **`semantic_diff.diff_engine`** — diff classification (BREAKING vs METADATA), edge cases
-3. **`semantic_diff.normalize_yaml` / `normalize_sf`** — normalisation correctness, camelCase→snake_case
-4. **`app.deployer`** — mock Snowflake connection, verify SQL generation, YAML injection
-5. **`scripts.validate_repo`** — repo validation rules, missing file detection
-6. **Integration** — end-to-end assemble → build_deploy → deploy round-trip
-7. **`scripts.build_deploy`** — verify generated artefacts contain custom_instructions
+```bash
+pytest tests/ -v
+```
+
+**Current coverage (117 tests):**
+
+| Module | Test file | Tests |
+|--------|-----------|-------|
+| `semantic_diff.assemble` | `tests/test_assemble.py` | 21 — assembly logic, orphan/missing detection, module concatenation |
+| `app.deployer` | `tests/test_deployer.py` | 14 — YAML map, block dumper, deployable YAML injection |
+| `semantic_diff.diff_engine` | `tests/test_diff_engine.py` | 30 — field diffing, dimensions/facts/metrics/keys, snapshot diffing, DiffReport |
+| `semantic_diff.normalize_yaml` | `tests/test_normalize_yaml.py` | 19 — snake_case conversion, key normalisation, YAML loading, real-repo smoke tests |
+| `app.snapshot_manager` | `tests/test_snapshot_manager.py` | 17 — save, list, prune, format, load, edge cases |
+
+**Remaining test opportunities:**
+- `scripts.validate_repo` — repo validation rules
+- `scripts.build_deploy` — verify generated artefacts
+- Integration — end-to-end assemble → build → deploy round-trip
+- Snowflake integration tests (require live connection)

@@ -110,17 +110,55 @@ def deploy_semantic_view(
 
 
 def deploy_agent_field(conn, field_name: str, instruction_text: str) -> str:
-    """Update a single agent instruction field via ``ALTER CORTEX AGENT``."""
-    field_upper = field_name.upper()
-    cursor = conn.cursor()
+    """Update a single agent instruction field via ``ALTER AGENT``.
+
+    Reads the current spec, patches the requested instruction field,
+    and writes back the full spec (Snowflake's ALTER AGENT requires
+    a complete specification replacement).
+    """
+    import snowflake.connector
+
+    cursor = conn.cursor(snowflake.connector.DictCursor)
     try:
-        # $$ delimiters avoid quoting issues in instruction text
-        sql = (
-            f"ALTER CORTEX AGENT {AGENT_FQN} "
-            f"SET {field_upper} = $${instruction_text}$$"
+        # 1. Fetch current spec
+        cursor.execute(f"DESCRIBE AGENT {AGENT_FQN}")
+        rows = cursor.fetchall()
+        if not rows:
+            return "❌ Agent not found"
+
+        spec_raw = _row_get(rows[0], "agent_spec")
+        try:
+            spec = json.loads(spec_raw) if spec_raw else {}
+        except (json.JSONDecodeError, TypeError):
+            spec = {}
+
+        # 2. Patch the instruction field
+        instructions = spec.setdefault("instructions", {})
+        # Map our field names to the spec keys
+        field_map = {
+            "orchestration_instructions": "orchestration",
+            "response_instructions": "response",
+        }
+        spec_key = field_map.get(field_name, field_name)
+        instructions[spec_key] = instruction_text
+
+        # 3. Write back the full spec as YAML
+        spec_yaml = yaml.dump(
+            spec, Dumper=_BlockDumper, default_flow_style=False,
+            sort_keys=False, allow_unicode=True, width=10000,
         )
-        cursor.execute(sql)
-        return f"✅ Agent {field_name} updated"
+        cursor2 = conn.cursor()
+        try:
+            sql = (
+                f"ALTER AGENT {AGENT_FQN} "
+                f"MODIFY LIVE VERSION SET SPECIFICATION = $${spec_yaml}$$"
+            )
+            cursor2.execute(sql)
+            return f"✅ Agent {field_name} updated"
+        except Exception as e:
+            return f"❌ Agent update failed: {e}"
+        finally:
+            cursor2.close()
     except Exception as e:
         return f"❌ Agent update failed: {e}"
     finally:
@@ -172,47 +210,69 @@ def get_live_custom_instructions(conn, view_name: str) -> Dict[str, str]:
 
 
 def get_live_agent_instructions(conn) -> Dict[str, str]:
-    """Return agent instruction fields from Snowflake."""
+    """Return agent instruction fields from Snowflake.
+
+    Uses ``DESCRIBE AGENT`` (primary) or ``SHOW AGENTS`` (fallback).
+    The DESCRIBE output contains an ``agent_spec`` column with the
+    full specification as a JSON string.
+    """
     import snowflake.connector
 
     cursor = conn.cursor(snowflake.connector.DictCursor)
 
-    # Try DESCRIBE first
+    # Try DESCRIBE first — returns agent_spec as JSON
     try:
-        cursor.execute(f"DESCRIBE CORTEX AGENT {AGENT_FQN}")
+        cursor.execute(f"DESCRIBE AGENT {AGENT_FQN}")
         rows = cursor.fetchall()
-        result: Dict[str, str] = {}
-        for row in rows:
-            prop = _row_get(row, "property").lower()
-            val = _row_get(row, "property_value")
-            if "orchestration" in prop:
-                result["orchestration_instructions"] = val
-            elif "response" in prop:
-                result["response_instructions"] = val
-            elif "display" in prop and "name" in prop:
-                result["display_name"] = val
-            elif prop == "description":
-                result["description"] = val
-        if result:
-            return result
+        if rows:
+            spec_raw = _row_get(rows[0], "agent_spec")
+            profile_raw = _row_get(rows[0], "profile")
+            try:
+                spec = json.loads(spec_raw) if spec_raw else {}
+            except (json.JSONDecodeError, TypeError):
+                spec = {}
+            instructions = spec.get("instructions", {})
+
+            # Extract display_name from profile JSON
+            display_name = ""
+            try:
+                profile = json.loads(profile_raw) if profile_raw else {}
+                display_name = profile.get("display_name", "")
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+            return {
+                "orchestration_instructions": str(
+                    instructions.get("orchestration", "")
+                ),
+                "response_instructions": str(
+                    instructions.get("response", "")
+                ),
+                "display_name": display_name,
+                "description": _row_get(rows[0], "comment"),
+            }
     except Exception:
         pass
 
-    # Fallback: SHOW
+    # Fallback: SHOW AGENTS
     try:
         cursor.execute(
-            f"SHOW CORTEX AGENTS LIKE 'INSULINTEL' IN SCHEMA {SCHEMA_FQN}"
+            f"SHOW AGENTS LIKE 'INSULINTEL' IN SCHEMA {SCHEMA_FQN}"
         )
         rows = cursor.fetchall()
         if rows:
             row = rows[0]
+            display_name = ""
+            try:
+                profile = json.loads(_row_get(row, "profile") or "{}")
+                display_name = profile.get("display_name", "")
+            except (json.JSONDecodeError, TypeError):
+                pass
             return {
-                "orchestration_instructions": _row_get(
-                    row, "orchestration_instructions"
-                ),
-                "response_instructions": _row_get(row, "response_instructions"),
-                "display_name": _row_get(row, "display_name"),
-                "description": _row_get(row, "description"),
+                "orchestration_instructions": "",
+                "response_instructions": "",
+                "display_name": display_name,
+                "description": _row_get(row, "comment"),
             }
     except Exception as e:
         return {"_error": str(e)}
