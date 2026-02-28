@@ -1,13 +1,12 @@
 ---
 name: continueAuditWork
-description: Continue work on the insulintel-semantic-models repo — all audit items complete, ready for next phase
-argument-hint: Optional focus (e.g., "Streamlit app testing", "Snowflake live validation", "new feature")
+description: Continue work on the insulintel-semantic-models repo — all audit PRs merged, ready for next phase
+argument-hint: Optional focus (e.g., "Streamlit app testing", "Snowflake live validation", "normalize_sf tests", "new feature")
 ---
 
 ## Context — What Has Been Done
 
-Two rounds of repo audit have been completed and merged (PR #2) or submitted (PR #3).
-Branch: `feat/semantic-sync-full-validation`
+Two rounds of repo audit have been completed and **merged to `main`**.
 
 ### PR #2 (MERGED) — Initial Audit
 
@@ -22,7 +21,7 @@ Branch: `feat/semantic-sync-full-validation`
 | 7 | 21 unit tests for `assemble.py` | `tests/test_assemble.py` |
 | 8 | Fixed Streamlit secrets resolution | `app/.streamlit/` (deleted) |
 
-### PR #3 (OPEN — ready to merge) — SQL Syntax Fix + Tests + Docs
+### PR #3 (MERGED) — SQL Syntax Fix + Tests + Docs
 
 | # | Fix | Key Files |
 |---|-----|-----------|
@@ -32,9 +31,7 @@ Branch: `feat/semantic-sync-full-validation`
 | 4 | **96 new tests** (117 total across 5 files) | `tests/test_deployer.py`, `tests/test_snapshot_manager.py`, `tests/test_diff_engine.py`, `tests/test_normalize_yaml.py` |
 | 5 | **README expanded** — instruction pipeline, Streamlit admin panel docs, test coverage table | `README.md` |
 
-PR #3 URL: https://github.com/WaynezWorld/insulintel-semantic-models/pull/3
-
-### Validation (all passing)
+### Validation (all passing on `main`)
 - `python scripts/validate_repo.py` ✅
 - `python scripts/build_deploy.py` ✅
 - `pytest tests/ -q` → **117 passed** ✅
@@ -48,20 +45,31 @@ PR #3 URL: https://github.com/WaynezWorld/insulintel-semantic-models/pull/3
 - **Streamlit secrets**: project-level `.streamlit/secrets.toml` (NOT `app/.streamlit/`)
 - **Block YAML dumper**: `app/deployer.py` — `_BlockDumper` forces `|` style for multiline strings
 
-## Remaining Opportunities
+## Next Phase — Improvements (not bugs)
 
-These are NOT bugs — everything works. These are future improvements:
+Everything works. These are prioritized future improvements:
 
-1. **Live Snowflake validation** — Run the Streamlit app's Diff tab against the real Snowflake account to confirm the new DESCRIBE/SHOW AGENTS queries work end-to-end
-2. **Streamlit app testing** — `streamlit run app/streamlit_app.py` had port conflicts in previous sessions; verify it starts cleanly
-3. **Additional test coverage** — `validate_repo.py`, `build_deploy.py`, integration tests (see README)
-4. **Snowflake integration tests** — tests that run against a live connection (behind a flag/fixture)
-5. **`normalize_sf.py`** — untested; normalises Snowflake DESCRIBE SEMANTIC VIEW output
+### High Priority
+1. **Live Snowflake validation** — Run `SHOW AGENTS`, `DESCRIBE AGENT`, and `ALTER AGENT` against the real account (`LIYWRBM-JZC37138`) to confirm end-to-end correctness
+2. **Streamlit app smoke test** — `streamlit run app/streamlit_app.py` — verify it starts cleanly and each tab renders
+
+### Medium Priority
+3. **`normalize_sf.py` tests** — normalises Snowflake `DESCRIBE SEMANTIC VIEW` output; currently untested
+4. **`validate_repo.py` tests** — unit tests for the repo validation script
+5. **`build_deploy.py` tests** — unit tests for the build/deploy pipeline script
+6. **Integration test harness** — `pytest` fixtures with a `--live` flag for tests that need a Snowflake connection
+
+### Lower Priority
+7. **CI enhancements** — test coverage reporting, badge in README
+8. **Pre-commit hooks** — `ruff` linting, YAML validation
+9. **Semantic view diffing improvements** — enhanced diff display in Streamlit
 
 ## Instructions
 
 1. Read this context to understand current state
-2. Run `git branch --show-current` and `git log --oneline -5` to verify
-3. Address the user's request, or propose improvements from the list above
-4. Always validate: `validate_repo.py`, `build_deploy.py`, `pytest tests/ -q`
-5. Commit to a feature branch and create PRs for the user to merge
+2. Run `git checkout main && git pull` to ensure you're on latest
+3. Run `git log --oneline -5` to verify both PR merge commits are present
+4. Address the user's request, or propose improvements from the list above
+5. Always validate: `validate_repo.py`, `build_deploy.py`, `pytest tests/ -q`
+6. Create a feature branch for any changes, push, and create a PR
+7. **Always update this prompt file** before ending a session so the next chat has full context
