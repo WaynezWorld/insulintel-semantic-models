@@ -1,0 +1,56 @@
+# =============================================================================
+# Assembly mapping: instruction modules → Snowflake deployment targets
+# =============================================================================
+# Every file under instructions/ MUST appear here.
+# The validator enforces this — no orphaned files allowed.
+#
+# Semantic view targets:
+#   sql_generation          → Custom Instructions > SQL generation
+#   question_categorization → Custom Instructions > Question categorization
+#
+# Agent targets:
+#   orchestration_instructions → Agent > Orchestration instructions
+#   response_instructions      → Agent > Response instructions
+# =============================================================================
+
+semantic_views:
+  SEM_INSULINTEL:
+    sql_generation:
+      - _global/medical_disclaimer.yaml
+      - _global/safety_guardrails.yaml
+      - _global/time_defaults.yaml
+      - _global/response_format.yaml
+      - sem_insulintel/identity.yaml
+      - sem_insulintel/scope_rules.yaml
+      - sem_insulintel/response_format.yaml
+    question_categorization:
+      - sem_insulintel/routing_keywords.yaml
+
+  SEM_ACTIVITY:
+    sql_generation:
+      - _global/medical_disclaimer.yaml
+      - _global/safety_guardrails.yaml
+      - _global/time_defaults.yaml
+      - _global/response_format.yaml
+      - sem_activity/identity.yaml
+      - sem_activity/response_format.yaml
+    question_categorization:
+      - sem_activity/routing_keywords.yaml
+
+  SEM_NHANES:
+    sql_generation:
+      - _global/medical_disclaimer.yaml
+      - _global/safety_guardrails.yaml
+      - _global/time_defaults.yaml
+      - _global/response_format.yaml
+      - sem_nhanes/identity.yaml
+      - sem_nhanes/response_format.yaml
+    question_categorization:
+      - sem_nhanes/routing_keywords.yaml
+
+agent:
+  INSULINTEL:
+    orchestration_instructions:
+      - agent_insulintel/orchestration_instructions.yaml
+    response_instructions:
+      - agent_insulintel/response_instructions.yaml

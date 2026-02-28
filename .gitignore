@@ -8,3 +8,9 @@
 
 # VS Code local settings
 .vscode/
+
+# Diff engine temp artifacts
+.tmp_sync/
+snapshots/
+__pycache__/
+*.pyc
