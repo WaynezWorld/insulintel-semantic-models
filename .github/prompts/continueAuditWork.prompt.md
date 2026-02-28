@@ -37,16 +37,22 @@ Two rounds of repo audit have been completed and **merged to `main`**.
 |---|-----|-----------|
 | 1 | **52 unit tests for `normalize_sf.py`** — CSV reading (UTF-8/UTF-16/CP1252), JSON extraction, all individual parsers (base_table, dimension, fact, metric, key, relationship, table, custom_instructions), `load_snowflake_json`, `load_snowflake_describe`, JSON/CSV parity | `tests/test_normalize_sf.py` |
 
-### PR #7 (IN PROGRESS) — `validate_repo.py` Tests
+### PR #7 (MERGED) — `validate_repo.py` Tests
 
 | # | Fix | Key Files |
 |---|-----|-----------|
 | 1 | **58 unit tests for `validate_repo.py`** — Finding dataclass, SQL comment stripping, CTE collection, FQDN validation (13 cases incl. CTEs, stages, TABLE(), LATERAL, subqueries), expected model checks, deploy wiring, SQL file scanning, instruction assembly (missing/orphan/null handling), print_findings output, real-repo smoke test | `tests/test_validate_repo.py` |
 
+### PR #8 (IN PROGRESS) — `build_deploy.py` Tests
+
+| # | Fix | Key Files |
+|---|-----|-----------|
+| 1 | **28 unit tests for `build_deploy.py`** — `_indent` helper, `build_semantic_view_yamls` (file generation, YAML validity, custom_instructions injection, idempotency), `build_agent_sql` (SQL content, no CORTEX in commands, FQN refs, MODIFY LIVE VERSION, dollar quoting, idempotency), `main()` (default/custom/new out-dir), real-repo smoke + deploy/ parity check | `tests/test_build_deploy.py` |
+
 ### Validation (all passing)
 - `python scripts/validate_repo.py` ✅
 - `python scripts/build_deploy.py` ✅
-- `pytest tests/ -q` → **227 passed** ✅ (169 prior + 58 new validate_repo)
+- `pytest tests/ -q` → **255 passed** ✅ (227 prior + 28 new build_deploy)
 
 ## Key Architecture Notes
 
@@ -68,7 +74,7 @@ Everything works. These are prioritized future improvements:
 ### Medium Priority
 3. ~~**`normalize_sf.py` tests**~~ ✅ DONE — 52 tests covering CSV encoding fallback, JSON extraction, all parsers, public API (`load_snowflake_describe`, `load_snowflake_json`), and JSON/CSV parity. Branch: `test/normalize-sf-tests`.
 4. ~~**`validate_repo.py` tests**~~ ✅ DONE — 58 tests covering Finding, utilities (comment stripping, CTE collection, token cleaning), SQL FQDN validation, model checks, deploy wiring, instruction assembly, print_findings, real-repo smoke test. Branch: `test/validate-repo-tests`.
-5. **`build_deploy.py` tests** — unit tests for the build/deploy pipeline script
+5. ~~**`build_deploy.py` tests**~~ ✅ DONE — 28 tests covering `_indent`, view YAML generation, agent SQL generation, `main()` CLI, real-repo smoke + deploy/ parity. Branch: `test/build-deploy-tests`.
 6. **Integration test harness** — `pytest` fixtures with a `--live` flag for tests that need a Snowflake connection
 
 ### Lower Priority
