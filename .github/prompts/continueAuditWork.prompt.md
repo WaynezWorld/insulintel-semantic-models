@@ -31,16 +31,22 @@ Two rounds of repo audit have been completed and **merged to `main`**.
 | 4 | **96 new tests** (117 total across 5 files) | `tests/test_deployer.py`, `tests/test_snapshot_manager.py`, `tests/test_diff_engine.py`, `tests/test_normalize_yaml.py` |
 | 5 | **README expanded** — instruction pipeline, Streamlit admin panel docs, test coverage table | `README.md` |
 
-### PR #6 (IN PROGRESS) — `normalize_sf.py` Tests
+### PR #6 (MERGED) — `normalize_sf.py` Tests
 
 | # | Fix | Key Files |
 |---|-----|-----------|
 | 1 | **52 unit tests for `normalize_sf.py`** — CSV reading (UTF-8/UTF-16/CP1252), JSON extraction, all individual parsers (base_table, dimension, fact, metric, key, relationship, table, custom_instructions), `load_snowflake_json`, `load_snowflake_describe`, JSON/CSV parity | `tests/test_normalize_sf.py` |
 
-### Validation (all passing on `main`)
+### PR #7 (IN PROGRESS) — `validate_repo.py` Tests
+
+| # | Fix | Key Files |
+|---|-----|-----------|
+| 1 | **58 unit tests for `validate_repo.py`** — Finding dataclass, SQL comment stripping, CTE collection, FQDN validation (13 cases incl. CTEs, stages, TABLE(), LATERAL, subqueries), expected model checks, deploy wiring, SQL file scanning, instruction assembly (missing/orphan/null handling), print_findings output, real-repo smoke test | `tests/test_validate_repo.py` |
+
+### Validation (all passing)
 - `python scripts/validate_repo.py` ✅
 - `python scripts/build_deploy.py` ✅
-- `pytest tests/ -q` → **169 passed** ✅ (117 prior + 52 new normalize_sf)
+- `pytest tests/ -q` → **227 passed** ✅ (169 prior + 58 new validate_repo)
 
 ## Key Architecture Notes
 
@@ -61,7 +67,7 @@ Everything works. These are prioritized future improvements:
 
 ### Medium Priority
 3. ~~**`normalize_sf.py` tests**~~ ✅ DONE — 52 tests covering CSV encoding fallback, JSON extraction, all parsers, public API (`load_snowflake_describe`, `load_snowflake_json`), and JSON/CSV parity. Branch: `test/normalize-sf-tests`.
-4. **`validate_repo.py` tests** — unit tests for the repo validation script
+4. ~~**`validate_repo.py` tests**~~ ✅ DONE — 58 tests covering Finding, utilities (comment stripping, CTE collection, token cleaning), SQL FQDN validation, model checks, deploy wiring, instruction assembly, print_findings, real-repo smoke test. Branch: `test/validate-repo-tests`.
 5. **`build_deploy.py` tests** — unit tests for the build/deploy pipeline script
 6. **Integration test harness** — `pytest` fixtures with a `--live` flag for tests that need a Snowflake connection
 
