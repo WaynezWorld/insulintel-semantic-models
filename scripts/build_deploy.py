@@ -43,6 +43,16 @@ VIEWS = SEMANTIC_VIEW_NAMES
 
 
 # ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _indent(text: str, spaces: int) -> str:
+    """Indent every line of *text* by *spaces* spaces."""
+    prefix = " " * spaces
+    return "\n".join(prefix + line for line in text.splitlines())
+
+
+# ---------------------------------------------------------------------------
 # Build functions
 # ---------------------------------------------------------------------------
 
@@ -82,16 +92,18 @@ def build_agent_sql(out_dir: Path) -> Path:
 -- Step 1: Fetch latest repo contents
 ALTER GIT REPOSITORY {SCHEMA_FQN}.REPO_SEMANTIC_MODELS FETCH;
 
--- Step 2: Update orchestration instructions
-ALTER CORTEX AGENT {AGENT_FQN}
-SET ORCHESTRATION_INSTRUCTIONS = $${orchestration}$$;
+-- Step 2: Update agent instructions (full specification replacement)
+ALTER AGENT {AGENT_FQN}
+MODIFY LIVE VERSION SET SPECIFICATION = $$
+instructions:
+  orchestration: |
+{_indent(orchestration, 4)}
+  response: |
+{_indent(response, 4)}
+$$;
 
--- Step 3: Update response instructions
-ALTER CORTEX AGENT {AGENT_FQN}
-SET RESPONSE_INSTRUCTIONS = $${response}$$;
-
--- Step 4: Verify
-DESCRIBE CORTEX AGENT {AGENT_FQN};
+-- Step 3: Verify
+DESCRIBE AGENT {AGENT_FQN};
 """
 
     out_path = out_dir / "deploy_agent.sql"
