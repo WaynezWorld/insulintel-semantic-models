@@ -351,6 +351,73 @@ tables:
         - PARTICIPANT_ID
         - WINDOW_DATE
         - WINDOW_TYPE
+  - name: V_PATIENTS
+    description: The table contains records of patients with their demographic and contact information. Each record represents an individual patient and includes personal identifiers, demographic attributes, contact details, geographic information, account status, research participation preferences, and data source tracking.
+    base_table:
+      database: DB_INSULINTEL
+      schema: SCH_SEMANTIC
+      table: V_PATIENTS
+    dimensions:
+      - name: CREATED_AT
+        expr: CREATED_AT
+        data_type: TIMESTAMP_NTZ(9)
+      - name: CREATED_BY
+        expr: CREATED_BY
+        data_type: VARCHAR(16777216)
+      - name: DATASET_SOURCE
+        expr: DATASET_SOURCE
+        data_type: VARCHAR(10)
+      - name: DATE_OF_BIRTH
+        expr: DATE_OF_BIRTH
+        data_type: DATE
+      - name: EFFECTIVE_DT
+        expr: EFFECTIVE_DT
+        data_type: TIMESTAMP_NTZ(9)
+      - name: EFFECTIVE_UNTIL_DT
+        expr: EFFECTIVE_UNTIL_DT
+        data_type: TIMESTAMP_NTZ(9)
+      - name: EMAIL_ADDRESS
+        expr: EMAIL_ADDRESS
+        data_type: VARCHAR(16777216)
+      - name: ETHNICITY
+        expr: ETHNICITY
+        data_type: VARCHAR(16777216)
+      - name: FIRST_NAME
+        expr: FIRST_NAME
+        data_type: VARCHAR(16777216)
+      - name: FULL_NAME
+        expr: FULL_NAME
+        data_type: VARCHAR(16777216)
+      - name: GENDER
+        expr: GENDER
+        data_type: VARCHAR(16777216)
+      - name: IS_RESEARCH_OPT_IN
+        expr: IS_RESEARCH_OPT_IN
+        data_type: BOOLEAN
+      - name: LAST_NAME
+        expr: LAST_NAME
+        data_type: VARCHAR(16777216)
+      - name: MODIFIED_AT
+        expr: MODIFIED_AT
+        data_type: TIMESTAMP_NTZ(9)
+      - name: MODIFIED_BY
+        expr: MODIFIED_BY
+        data_type: VARCHAR(16777216)
+      - name: PHONE_NUMBER
+        expr: PHONE_NUMBER
+        data_type: VARCHAR(16777216)
+      - name: STATUS
+        expr: STATUS
+        data_type: VARCHAR(16777216)
+      - name: USER_ID
+        expr: USER_ID
+        data_type: VARCHAR(16777216)
+      - name: ZIP_CODE
+        expr: ZIP_CODE
+        data_type: VARCHAR(16777216)
+    unique_keys:
+      - columns:
+          - USER_ID
 relationships:
   - name: EPISODES_TO_DAILY
     left_table: V_GOLD_GLUCOSE_EPISODES
@@ -373,4 +440,25 @@ relationships:
         right_column: PARTICIPANT_ID
       - left_column: WINDOW_DATE
         right_column: READING_DATE
+    relationship_type: many_to_one
+  - name: V_GOLD_CGM_UNIFIED_TO_V_PATIENTS
+    left_table: V_GOLD_CGM_UNIFIED
+    right_table: V_PATIENTS
+    relationship_columns:
+      - left_column: PARTICIPANT_ID
+        right_column: USER_ID
+    relationship_type: many_to_one
+  - name: V_GOLD_GLUCOSE_DAILY_SUMMARY_TO_V_PATIENTS
+    left_table: V_GOLD_GLUCOSE_DAILY_SUMMARY
+    right_table: V_PATIENTS
+    relationship_columns:
+      - left_column: PARTICIPANT_ID
+        right_column: USER_ID
+    relationship_type: many_to_one
+  - name: V_GOLD_GLUCOSE_EPISODES_TO_V_PATIENTS
+    left_table: V_GOLD_GLUCOSE_EPISODES
+    right_table: V_PATIENTS
+    relationship_columns:
+      - left_column: PARTICIPANT_ID
+        right_column: USER_ID
     relationship_type: many_to_one
