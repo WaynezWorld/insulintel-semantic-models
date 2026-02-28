@@ -280,6 +280,21 @@ tables:
         expr: AVG_MEAL_SCORE
         data_type: FLOAT
         access_modifier: public_access
+      - name: AVG_PEAK_DELTA
+        expr: AVG_PEAK_DELTA
+        data_type: FLOAT
+        description: Average post-meal glucose spike magnitude (mg/dL) across meals for the day.
+        access_modifier: public_access
+      - name: AVG_TIME_TO_PEAK_MINUTES
+        expr: AVG_TIME_TO_PEAK_MINUTES
+        data_type: FLOAT
+        description: Average minutes from meal start to peak glucose across meals for the day.
+        access_modifier: public_access
+      - name: HIGH_CARB_MEALS_COUNT
+        expr: HIGH_CARB_MEALS_COUNT
+        data_type: NUMBER(18,0)
+        description: Number of meals exceeding the high-carb threshold for the day.
+        access_modifier: public_access
       - name: MEAL_COUNT
         expr: MEAL_COUNT
         data_type: NUMBER(18,0)
@@ -416,6 +431,11 @@ tables:
         expr: SLEEP_DURATION_GRADE
         data_type: VARCHAR(10)
     facts:
+      - name: FASTING_GATE_SCORE
+        expr: FASTING_GATE_SCORE
+        data_type: FLOAT
+        description: Sleep-quality indicator reflecting overnight fasting glucose impact (0–100 scale).
+        access_modifier: public_access
       - name: FRAGMENTATION_INDEX
         expr: FRAGMENTATION_INDEX
         data_type: NUMBER(31,6)
@@ -637,63 +657,63 @@ tables:
           - USER_ID
 relationships:
   - name: BP_READINGS_TO_DAILY
-    leftTable: V_GOLD_BP_READINGS
-    rightTable: V_GOLD_BP_DAILY_SUMMARY
-    relationshipColumns:
-      - leftColumn: DATASET_SOURCE
-        rightColumn: DATASET_SOURCE
-      - leftColumn: PARTICIPANT_ID
-        rightColumn: PARTICIPANT_ID
-      - leftColumn: MEASURED_DATE
-        rightColumn: READING_DATE
-    relationshipType: many_to_one
+    left_table: V_GOLD_BP_READINGS
+    right_table: V_GOLD_BP_DAILY_SUMMARY
+    relationship_columns:
+      - left_column: DATASET_SOURCE
+        right_column: DATASET_SOURCE
+      - left_column: PARTICIPANT_ID
+        right_column: PARTICIPANT_ID
+      - left_column: MEASURED_DATE
+        right_column: READING_DATE
+    relationship_type: many_to_one
   - name: MEAL_SESSIONS_TO_DAILY
-    leftTable: V_GOLD_MEAL_SESSIONS
-    rightTable: V_GOLD_MEAL_DAILY
-    relationshipColumns:
-      - leftColumn: DATASET_SOURCE
-        rightColumn: DATASET_SOURCE
-      - leftColumn: PARTICIPANT_ID
-        rightColumn: PARTICIPANT_ID
-      - leftColumn: MEAL_DATE
-        rightColumn: READING_DATE
-    relationshipType: many_to_one
+    left_table: V_GOLD_MEAL_SESSIONS
+    right_table: V_GOLD_MEAL_DAILY
+    relationship_columns:
+      - left_column: DATASET_SOURCE
+        right_column: DATASET_SOURCE
+      - left_column: PARTICIPANT_ID
+        right_column: PARTICIPANT_ID
+      - left_column: MEAL_DATE
+        right_column: READING_DATE
+    relationship_type: many_to_one
   - name: SLEEP_SESSIONS_TO_DAILY
-    leftTable: V_GOLD_SLEEP_SESSIONS
-    rightTable: V_GOLD_SLEEP_DAILY
-    relationshipColumns:
-      - leftColumn: DATASET_SOURCE
-        rightColumn: DATASET_SOURCE
-      - leftColumn: PARTICIPANT_ID
-        rightColumn: PARTICIPANT_ID
-      - leftColumn: SLEEP_DATE
-        rightColumn: SLEEP_DATE
-    relationshipType: many_to_one
+    left_table: V_GOLD_SLEEP_SESSIONS
+    right_table: V_GOLD_SLEEP_DAILY
+    relationship_columns:
+      - left_column: DATASET_SOURCE
+        right_column: DATASET_SOURCE
+      - left_column: PARTICIPANT_ID
+        right_column: PARTICIPANT_ID
+      - left_column: SLEEP_DATE
+        right_column: SLEEP_DATE
+    relationship_type: many_to_one
   - name: PATIENTS_TO_EXERCISE_SESSIONS
-    leftTable: V_GOLD_EXERCISE_SESSIONS
-    rightTable: V_PATIENTS
-    relationshipColumns:
-      - leftColumn: PARTICIPANT_ID
-        rightColumn: USER_ID
-    relationshipType: many_to_one
+    left_table: V_GOLD_EXERCISE_SESSIONS
+    right_table: V_PATIENTS
+    relationship_columns:
+      - left_column: PARTICIPANT_ID
+        right_column: USER_ID
+    relationship_type: many_to_one
   - name: V_GOLD_CGM_SUBJECTS_TO_V_PATIENTS
-    leftTable: V_GOLD_CGM_SUBJECTS
-    rightTable: V_PATIENTS
-    relationshipColumns:
-      - leftColumn: PARTICIPANT_ID
-        rightColumn: USER_ID
-    relationshipType: many_to_one
+    left_table: V_GOLD_CGM_SUBJECTS
+    right_table: V_PATIENTS
+    relationship_columns:
+      - left_column: PARTICIPANT_ID
+        right_column: USER_ID
+    relationship_type: many_to_one
   - name: V_GOLD_MEAL_DAILY_TO_V_PATIENTS
-    leftTable: V_GOLD_MEAL_DAILY
-    rightTable: V_PATIENTS
-    relationshipColumns:
-      - leftColumn: PARTICIPANT_ID
-        rightColumn: USER_ID
-    relationshipType: many_to_one
+    left_table: V_GOLD_MEAL_DAILY
+    right_table: V_PATIENTS
+    relationship_columns:
+      - left_column: PARTICIPANT_ID
+        right_column: USER_ID
+    relationship_type: many_to_one
   - name: V_GOLD_SLEEP_DAILY_TO_V_PATIENTS
-    leftTable: V_GOLD_SLEEP_DAILY
-    rightTable: V_PATIENTS
-    relationshipColumns:
-      - leftColumn: PARTICIPANT_ID
-        rightColumn: USER_ID
-    relationshipType: many_to_one
+    left_table: V_GOLD_SLEEP_DAILY
+    right_table: V_PATIENTS
+    relationship_columns:
+      - left_column: PARTICIPANT_ID
+        right_column: USER_ID
+    relationship_type: many_to_one

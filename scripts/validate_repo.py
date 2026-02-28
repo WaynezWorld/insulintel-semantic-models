@@ -7,6 +7,8 @@ Checks:
 2) scripts/deploy.sql references all expected model YAML files
 3) SQL FROM/JOIN table references in scripts/*.sql are FQDN (DB.SCHEMA.OBJECT),
    excluding CTE names, stage references, and common table-function patterns.
+4) instructions/assembly.yaml references all instruction files (no orphans)
+5) All files referenced in assembly.yaml exist on disk (no missing)
 """
 
 from __future__ import annotations
@@ -176,6 +178,65 @@ def validate_sql_files(root: Path) -> List[Finding]:
     return findings
 
 
+def validate_instruction_assembly(root: Path) -> List[Finding]:
+    """Check that assembly.yaml covers all instruction files and vice-versa."""
+    findings: List[Finding] = []
+    assembly_path = root / "instructions" / "assembly.yaml"
+    if not assembly_path.exists():
+        findings.append(Finding("ERROR", "Missing instructions/assembly.yaml", assembly_path))
+        return findings
+
+    # Import assembly helpers (same repo)
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "assemble",
+        root / "scripts" / "semantic_diff" / "assemble.py",
+        submodule_search_locations=[str(root / "scripts")],
+    )
+    # Fallback: inline check using yaml
+    try:
+        import yaml
+        with open(assembly_path, encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+
+        # Collect all referenced paths
+        referenced: Set[str] = set()
+        for _view, targets in (config.get("semantic_views") or {}).items():
+            for _field, modules in (targets or {}).items():
+                referenced.update(modules or [])
+        for _agent, targets in (config.get("agent") or {}).items():
+            for _field, modules in (targets or {}).items():
+                referenced.update(modules or [])
+
+        instr_dir = root / "instructions"
+
+        # Check for missing files
+        for rel in sorted(referenced):
+            if not (instr_dir / rel).exists():
+                findings.append(Finding(
+                    "ERROR",
+                    f"assembly.yaml references missing file: instructions/{rel}",
+                    instr_dir / rel,
+                ))
+
+        # Check for orphaned files
+        for yaml_path in sorted(instr_dir.rglob("*.yaml")):
+            rel = yaml_path.relative_to(instr_dir).as_posix()
+            if rel == "assembly.yaml":
+                continue
+            if rel not in referenced:
+                findings.append(Finding(
+                    "ERROR",
+                    f"Instruction file not in assembly.yaml (orphaned): instructions/{rel}",
+                    yaml_path,
+                ))
+
+    except ImportError:
+        findings.append(Finding("WARN", "pyyaml not installed — skipping assembly validation"))
+
+    return findings
+
+
 def print_findings(findings: Iterable[Finding]) -> int:
     findings = list(findings)
     warns = [f for f in findings if f.level == "WARN"]
@@ -202,6 +263,7 @@ def main() -> int:
     findings.extend(validate_expected_models(root))
     findings.extend(validate_deploy_wiring(root))
     findings.extend(validate_sql_files(root))
+    findings.extend(validate_instruction_assembly(root))
 
     return print_findings(findings)
 

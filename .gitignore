@@ -8,3 +8,21 @@
 
 # VS Code local settings
 .vscode/
+
+# Diff engine temp artifacts
+.tmp_sync/
+snapshots/
+__pycache__/
+*.pyc
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# Deployment snapshots (local state)
+.snapshots/
+
+# Streamlit secrets (actual credentials)
+.streamlit/secrets.toml
+app/.streamlit/secrets.toml
