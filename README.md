@@ -1,5 +1,8 @@
 # insulintel-semantic-models
 
+![CI](https://github.com/WaynezWorld/insulintel-semantic-models/actions/workflows/ci.yml/badge.svg)
+![Coverage](https://raw.githubusercontent.com/WaynezWorld/insulintel-semantic-models/main/.github/badges/coverage.svg)
+
 Semantic model definitions (YAML) for Insulintel / wellness analytics, designed to be deployed as **Snowflake Semantic Views** from a Git-synced repository.
 
 This repo is primarily configuration (not an application): it stores semantic-view YAML files and a simple deployment script.
@@ -125,7 +128,10 @@ You’ll need to adjust database/schema/repo object names to match your Snowflak
 
 ```bash
 # Install editable package (enables `semantic-diff` CLI + clean imports)
-pip install -e .
+pip install -e ".[dev]"
+
+# Set up pre-commit hooks (ruff lint + format, YAML checks)
+pre-commit install
 
 # Copy secrets template and fill in credentials
 cp .streamlit/secrets.toml.example .streamlit/secrets.toml
@@ -171,7 +177,7 @@ Run the test suite with:
 pytest tests/ -v
 ```
 
-**Current coverage (117 tests):**
+**Current coverage (277 tests — 255 unit + 22 live integration):**
 
 | Module | Test file | Tests |
 |--------|-----------|-------|
@@ -180,9 +186,12 @@ pytest tests/ -v
 | `semantic_diff.diff_engine` | `tests/test_diff_engine.py` | 30 — field diffing, dimensions/facts/metrics/keys, snapshot diffing, DiffReport |
 | `semantic_diff.normalize_yaml` | `tests/test_normalize_yaml.py` | 19 — snake_case conversion, key normalisation, YAML loading, real-repo smoke tests |
 | `app.snapshot_manager` | `tests/test_snapshot_manager.py` | 17 — save, list, prune, format, load, edge cases |
+| `semantic_diff.normalize_sf` | `tests/test_normalize_sf.py` | 52 — CSV encoding, JSON extraction, all parsers, public API, JSON/CSV parity |
+| `scripts.validate_repo` | `tests/test_validate_repo.py` | 58 — Finding, SQL utilities, FQDN, models, deploy wiring, assembly, smoke |
+| `scripts.build_deploy` | `tests/test_build_deploy.py` | 28 — indent, YAML gen, agent SQL, main() CLI, repo parity |
+| `app.deployer` (live) | `tests/test_live_integration.py` | 22 — Snowflake round-trip: CI read/write, agent patch, CORTEX.COMPLETE |
+| (shared) | `tests/conftest.py` | — `--live` flag, `snowflake_conn` fixture, auto-skip |
 
-**Remaining test opportunities:**
-- `scripts.validate_repo` — repo validation rules
-- `scripts.build_deploy` — verify generated artefacts
-- Integration — end-to-end assemble → build → deploy round-trip
-- Snowflake integration tests (require live connection)
+Run unit tests: `pytest tests/ -q`
+Run with integration: `pytest tests/ -q --live`
+Run with coverage: `pytest tests/ -q --cov=semantic_diff --cov=app --cov-report=term-missing`
