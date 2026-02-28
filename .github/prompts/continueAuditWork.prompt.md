@@ -56,7 +56,7 @@ Two rounds of repo audit have been completed and **merged to `main`**.
 | 1 | **`tests/conftest.py`** — `--live` CLI flag via `pytest_addoption`, auto-skip logic (`pytest_collection_modifyitems`), `snowflake_conn` session fixture (reads `.streamlit/secrets.toml` or env vars), custom marker registration | `tests/conftest.py` |
 | 2 | **22 live integration tests** — `get_live_custom_instructions` (3 views × 2 checks), `get_live_agent_instructions` (keys, orchestration, response), `deploy_semantic_view` (round-trip + empty CI), `deploy_agent_field` (round-trip per field), `test_with_cortex` (simple + custom model), `build_deployable_yaml` live sanity | `tests/test_live_integration.py` |
 
-### PR #10 (IN PROGRESS) — Lower Priority Improvements
+### PR #10 (MERGED) — Lower Priority Improvements
 
 | # | Fix | Key Files |
 |---|-----|-----------|
