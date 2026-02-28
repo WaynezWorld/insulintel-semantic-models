@@ -1,0 +1,10 @@
+# Local secrets and tokens
+*.token
+*.secret
+*token-secret*.txt
+
+# Snowflake CLI local configuration
+.snowflake/
+
+# VS Code local settings
+.vscode/

@@ -12,7 +12,7 @@ This repo is primarily configuration (not an application): it stores semantic-vi
 - `semantic_views/` — Snowflake Semantic View definitions
   - `sem_insulintel.yaml` — **SEM_INSULINTEL** (CGM-focused analytics)
   - `sem_nhanes.yaml` — **SEM_NHANES** (NHANES 2021–2023 population metabolic analytics)
-  - `sem_activity` — **SEM_ACTIVITY** (activity/lifestyle + glucose-context analytics)
+  - `sem_activity.yaml` — **SEM_ACTIVITY** (activity/lifestyle + glucose-context analytics)
 - `scripts/`
   - `deploy.sql` — example Snowflake script to fetch this Git repo and deploy semantic views
 - `instructions/` — supplemental guidance / prompts per semantic model (folder structure present)
@@ -31,7 +31,7 @@ Covers:
 - Workout sessions with glucose context (pre/post glucose windows, glucose change)
 
 ### SEM_ACTIVITY (activity + lifestyle analytics)
-Defined in: `semantic_views/sem_activity`
+Defined in: `semantic_views/sem_activity.yaml`
 
 Covers:
 - Exercise sessions, meals, sleep, and blood pressure
@@ -62,6 +62,24 @@ You’ll need to adjust database/schema/repo object names to match your Snowflak
 1. Edit or add files under `semantic_views/`
 2. Commit and push to `main`
 3. Re-run the Snowflake deploy script (or your CI/CD equivalent)
+
+## CI and branch protection
+
+This repository runs a GitHub Actions workflow at `.github/workflows/ci.yml` that executes:
+
+- `python scripts/validate_repo.py`
+
+The check name shown in GitHub is:
+
+- `CI / validate-repo`
+
+To require this before merge:
+
+1. Open **Settings → Branches** in GitHub
+2. Edit the branch protection rule for `main` (or create one)
+3. Enable **Require status checks to pass before merging**
+4. Select `CI / validate-repo`
+5. Save changes
 
 ## License
 
