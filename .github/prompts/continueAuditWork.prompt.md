@@ -43,16 +43,23 @@ Two rounds of repo audit have been completed and **merged to `main`**.
 |---|-----|-----------|
 | 1 | **58 unit tests for `validate_repo.py`** — Finding dataclass, SQL comment stripping, CTE collection, FQDN validation (13 cases incl. CTEs, stages, TABLE(), LATERAL, subqueries), expected model checks, deploy wiring, SQL file scanning, instruction assembly (missing/orphan/null handling), print_findings output, real-repo smoke test | `tests/test_validate_repo.py` |
 
-### PR #8 (IN PROGRESS) — `build_deploy.py` Tests
+### PR #8 (MERGED) — `build_deploy.py` Tests
 
 | # | Fix | Key Files |
 |---|-----|-----------|
 | 1 | **28 unit tests for `build_deploy.py`** — `_indent` helper, `build_semantic_view_yamls` (file generation, YAML validity, custom_instructions injection, idempotency), `build_agent_sql` (SQL content, no CORTEX in commands, FQN refs, MODIFY LIVE VERSION, dollar quoting, idempotency), `main()` (default/custom/new out-dir), real-repo smoke + deploy/ parity check | `tests/test_build_deploy.py` |
 
+### PR #9 (IN PROGRESS) — Integration Test Harness
+
+| # | Fix | Key Files |
+|---|-----|-----------|
+| 1 | **`tests/conftest.py`** — `--live` CLI flag via `pytest_addoption`, auto-skip logic (`pytest_collection_modifyitems`), `snowflake_conn` session fixture (reads `.streamlit/secrets.toml` or env vars), custom marker registration | `tests/conftest.py` |
+| 2 | **22 live integration tests** — `get_live_custom_instructions` (3 views × 2 checks), `get_live_agent_instructions` (keys, orchestration, response), `deploy_semantic_view` (round-trip + empty CI), `deploy_agent_field` (round-trip per field), `test_with_cortex` (simple + custom model), `build_deployable_yaml` live sanity | `tests/test_live_integration.py` |
+
 ### Validation (all passing)
 - `python scripts/validate_repo.py` ✅
 - `python scripts/build_deploy.py` ✅
-- `pytest tests/ -q` → **255 passed** ✅ (227 prior + 28 new build_deploy)
+- `pytest tests/ -q` → **255 passed, 22 skipped** ✅ (255 unit + 22 live-skipped integration tests)
 
 ## Key Architecture Notes
 
@@ -75,7 +82,7 @@ Everything works. These are prioritized future improvements:
 3. ~~**`normalize_sf.py` tests**~~ ✅ DONE — 52 tests covering CSV encoding fallback, JSON extraction, all parsers, public API (`load_snowflake_describe`, `load_snowflake_json`), and JSON/CSV parity. Branch: `test/normalize-sf-tests`.
 4. ~~**`validate_repo.py` tests**~~ ✅ DONE — 58 tests covering Finding, utilities (comment stripping, CTE collection, token cleaning), SQL FQDN validation, model checks, deploy wiring, instruction assembly, print_findings, real-repo smoke test. Branch: `test/validate-repo-tests`.
 5. ~~**`build_deploy.py` tests**~~ ✅ DONE — 28 tests covering `_indent`, view YAML generation, agent SQL generation, `main()` CLI, real-repo smoke + deploy/ parity. Branch: `test/build-deploy-tests`.
-6. **Integration test harness** — `pytest` fixtures with a `--live` flag for tests that need a Snowflake connection
+6. **Integration test harness** ✅ DONE — `tests/conftest.py` with `--live` CLI flag, auto-skip, `snowflake_conn` session fixture (env vars + `.streamlit/secrets.toml`); `tests/test_live_integration.py` with 22 live tests covering all 5 Snowflake-dependent deployer functions (round-trip safe). Branch: `feat/integration-test-harness`.
 
 ### Lower Priority
 7. **CI enhancements** — test coverage reporting, badge in README
