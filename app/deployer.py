@@ -24,7 +24,11 @@ except ImportError:
     if str(REPO_ROOT / "scripts") not in sys.path:
         sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-from semantic_diff.constants import SCHEMA_FQN, AGENT_FQN
+from semantic_diff.assemble import (
+    assemble_semantic_view_instructions,
+    assemble_agent_instructions,
+)
+from semantic_diff.constants import SCHEMA_FQN, AGENT_FQN, SEMANTIC_VIEW_NAMES
 
 YAML_MAP: Dict[str, Path] = {
     "SEM_INSULINTEL": REPO_ROOT / "semantic_views" / "sem_insulintel.yaml",
@@ -55,24 +59,23 @@ _BlockDumper.add_representer(str, _str_representer)
 
 def build_deployable_yaml(
     view_name: str,
-    custom_instructions: Dict[str, str],
+    custom_instructions: Dict[str, str] | None = None,
 ) -> str:
-    """Read a semantic-view YAML from repo and inject ``custom_instructions``.
+    """Read a semantic-view YAML from repo — **without** custom_instructions.
 
-    Returns the full YAML text ready for
-    ``SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML``.
+    Snowflake Semantic Views do not support ``custom_instructions`` in the
+    YAML spec passed to ``SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML``.
+    Custom instructions must be set via ``AI_SQL_GENERATION`` /
+    ``AI_QUESTION_CATEGORIZATION`` clauses in ``CREATE SEMANTIC VIEW``.
+
+    Returns the full YAML text (structure only, no AI instructions).
     """
     yaml_path = YAML_MAP[view_name]
     with open(yaml_path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    ci: dict = {}
-    if custom_instructions.get("question_categorization"):
-        ci["question_categorization"] = custom_instructions["question_categorization"]
-    if custom_instructions.get("sql_generation"):
-        ci["sql_generation"] = custom_instructions["sql_generation"]
-    if ci:
-        data["custom_instructions"] = ci
+    # Strip custom_instructions if they leaked into the base YAML
+    data.pop("custom_instructions", None)
 
     return yaml.dump(
         data,
@@ -93,16 +96,73 @@ def deploy_semantic_view(
     view_name: str,
     custom_instructions: Dict[str, str],
 ) -> str:
-    """Deploy a semantic view with the provided ``custom_instructions``."""
-    yaml_text = build_deployable_yaml(view_name, custom_instructions)
+    """Deploy a semantic view with custom instructions.
+
+    Two-step process (required by Snowflake's Semantic View architecture):
+    1. Deploy the base YAML via ``SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML``
+    2. Set ``AI_SQL_GENERATION`` / ``AI_QUESTION_CATEGORIZATION`` via
+       ``CREATE OR REPLACE SEMANTIC VIEW`` (using ``GET_DDL`` as the base).
+    """
+    fqn = f"{SCHEMA_FQN}.{view_name}"
+    yaml_text = build_deployable_yaml(view_name)
     cursor = conn.cursor()
     try:
+        # Step 1: Deploy base YAML (structure, tables, metrics, etc.)
         cursor.execute(
             "CALL SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML(%s, %s)",
             (SCHEMA_FQN, yaml_text),
         )
-        result = cursor.fetchone()
-        return f"✅ {view_name} deployed ({result[0] if result else 'OK'})"
+        cursor.fetchone()
+
+        # Step 2: Set AI instructions via CREATE OR REPLACE
+        sg = custom_instructions.get("sql_generation", "").strip()
+        qc = custom_instructions.get("question_categorization", "").strip()
+
+        if sg or qc:
+            # Get current DDL and inject AI clauses
+            cursor.execute(
+                f"SELECT GET_DDL('SEMANTIC_VIEW', '{fqn}', TRUE)"
+            )
+            ddl_row = cursor.fetchone()
+            if ddl_row:
+                import re
+
+                ddl = ddl_row[0].rstrip().rstrip(";")
+
+                # Remove existing AI clauses if present
+                ddl = re.sub(
+                    r"\s+AI_SQL_GENERATION\s+'(?:[^']|'')*'",
+                    "", ddl, flags=re.IGNORECASE,
+                )
+                ddl = re.sub(
+                    r"\s+AI_QUESTION_CATEGORIZATION\s+'(?:[^']|'')*'",
+                    "", ddl, flags=re.IGNORECASE,
+                )
+
+                # Remove the 'with extension (...)' clause — Snowflake
+                # auto-generates it and it conflicts with AI clauses
+                ddl = re.sub(
+                    r"\s*with\s+extension\s*\([^)]*\)\s*$",
+                    "", ddl, flags=re.IGNORECASE,
+                )
+
+                # Build AI clauses
+                ai_clauses = ""
+                if sg:
+                    escaped_sg = sg.replace("'", "''")
+                    ai_clauses += f"\n  AI_SQL_GENERATION '{escaped_sg}'"
+                if qc:
+                    escaped_qc = qc.replace("'", "''")
+                    ai_clauses += f"\n  AI_QUESTION_CATEGORIZATION '{escaped_qc}'"
+
+                # Ensure COPY GRANTS is present
+                if "COPY GRANTS" not in ddl.upper():
+                    ai_clauses += "\n  COPY GRANTS"
+
+                full_sql = ddl + ai_clauses + ";"
+                cursor.execute(full_sql)
+
+        return f"✅ {view_name} deployed"
     except Exception as e:
         return f"❌ Deploy failed: {e}"
     finally:
@@ -180,33 +240,34 @@ def _row_get(row: dict, key: str) -> str:
 
 
 def get_live_custom_instructions(conn, view_name: str) -> Dict[str, str]:
-    """Return ``{question_categorization, sql_generation}`` from Snowflake."""
+    """Return ``{question_categorization, sql_generation}`` from Snowflake.
+
+    Reads from DESCRIBE SEMANTIC VIEW rows where
+    ``object_kind='CUSTOM_INSTRUCTION'`` and ``property`` is one of
+    ``AI_SQL_GENERATION`` or ``AI_QUESTION_CATEGORIZATION``.
+    """
     import snowflake.connector
 
     fqn = f"{SCHEMA_FQN}.{view_name}"
     cursor = conn.cursor(snowflake.connector.DictCursor)
+    result: Dict[str, str] = {"question_categorization": "", "sql_generation": ""}
     try:
         cursor.execute(f"DESCRIBE SEMANTIC VIEW {fqn}")
         rows = cursor.fetchall()
         for row in rows:
             ok = _row_get(row, "object_kind")
-            on = _row_get(row, "object_name")
             prop = _row_get(row, "property")
             val = _row_get(row, "property_value")
-            if ok == "EXTENSION" and on == "CA" and prop == "VALUE":
-                data = json.loads(val)
-                ci = data.get("custom_instructions") or {}
-                return {
-                    "question_categorization": str(
-                        ci.get("question_categorization", "")
-                    ),
-                    "sql_generation": str(ci.get("sql_generation", "")),
-                }
+            if ok == "CUSTOM_INSTRUCTION":
+                if prop == "AI_SQL_GENERATION":
+                    result["sql_generation"] = val
+                elif prop == "AI_QUESTION_CATEGORIZATION":
+                    result["question_categorization"] = val
     except Exception as e:
         return {"_error": str(e)}
     finally:
         cursor.close()
-    return {"question_categorization": "", "sql_generation": ""}
+    return result
 
 
 def get_live_agent_instructions(conn) -> Dict[str, str]:
@@ -282,6 +343,42 @@ def get_live_agent_instructions(conn) -> Dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
+# Deploy All
+# ---------------------------------------------------------------------------
+
+def deploy_all_from_repo(
+    conn,
+) -> list[str]:
+    """Deploy all semantic views + agent instructions from repo files.
+
+    Assembles instructions from the instruction modules (via assembly.yaml),
+    injects them into the semantic view YAMLs, and deploys everything.
+    Returns a list of status messages.
+    """
+    results: list[str] = []
+
+    # ── Semantic views ────────────────────────────────────────────────
+    sv_instructions = assemble_semantic_view_instructions(REPO_ROOT)
+    for view_name in SEMANTIC_VIEW_NAMES:
+        ci = sv_instructions.get(view_name, {})
+        result = deploy_semantic_view(conn, view_name, ci)
+        results.append(result)
+
+    # ── Agent instructions ────────────────────────────────────────────
+    agent_instructions = assemble_agent_instructions(REPO_ROOT)
+    agent = agent_instructions.get("INSULINTEL", {})
+    for field_name in ("orchestration_instructions", "response_instructions"):
+        text = agent.get(field_name, "")
+        if text:
+            result = deploy_agent_field(conn, field_name, text)
+            results.append(result)
+        else:
+            results.append(f"⚠️ Agent {field_name}: no assembled content, skipped")
+
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Test via CORTEX.COMPLETE
 # ---------------------------------------------------------------------------
 
@@ -292,17 +389,15 @@ def test_with_cortex(
     model: str = "mistral-large2",
 ) -> str:
     """Call ``CORTEX.COMPLETE`` with assembled instructions as system prompt."""
-    messages = json.dumps(
-        [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message},
-        ]
-    )
+    prompt_obj = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_message},
+    ]
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT SNOWFLAKE.CORTEX.COMPLETE(%s, PARSE_JSON(%s)) AS response",
-            (model, messages),
+            "SELECT SNOWFLAKE.CORTEX.COMPLETE(%s, %s) AS response",
+            (model, json.dumps(prompt_obj)),
         )
         row = cursor.fetchone()
         if not row:

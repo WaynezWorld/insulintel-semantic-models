@@ -26,6 +26,7 @@ if str(_REPO_ROOT / "app") not in sys.path:
 from deployer import (
     build_deployable_yaml,
     deploy_agent_field,
+    deploy_all_from_repo,
     deploy_semantic_view,
     get_live_agent_instructions,
     get_live_custom_instructions,
@@ -200,8 +201,26 @@ class TestBuildDeployableYamlLive:
     def test_yaml_parses_cleanly(self, snowflake_conn, view_name):
         import yaml
 
-        live_ci = get_live_custom_instructions(snowflake_conn, view_name)
-        text = build_deployable_yaml(view_name, live_ci)
+        text = build_deployable_yaml(view_name)
         data = yaml.safe_load(text)
         assert isinstance(data, dict)
-        assert "name" in data or "tables" in data  # basic structure check
+        assert "name" in data or "tables" in data
+        # Must NOT contain custom_instructions (Snowflake rejects them)
+        assert "custom_instructions" not in data
+
+
+# ── deploy_all_from_repo (round-trip) ───────────────────────────────────────
+
+class TestDeployAllFromRepo:
+    """Exercise the full deploy_all_from_repo pipeline against live Snowflake.
+
+    This test re-deploys the current repo state (a no-op if already in sync)
+    and verifies every target returns a success status.
+    """
+
+    def test_deploy_all_succeeds(self, snowflake_conn):
+        results = deploy_all_from_repo(snowflake_conn)
+        # Expect 5 results: 3 semantic views + 2 agent fields
+        assert len(results) == 5
+        for r in results:
+            assert r.startswith("✅") or r.startswith("⚠️"), f"Unexpected result: {r}"
