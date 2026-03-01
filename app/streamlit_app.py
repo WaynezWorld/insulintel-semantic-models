@@ -40,6 +40,7 @@ if str(REPO_ROOT / "app") not in sys.path:
 from deployer import (  # noqa: E402
     deploy_semantic_view,
     deploy_agent_field,
+    deploy_all_from_repo,
     get_live_custom_instructions,
     get_live_agent_instructions,
     test_with_cortex,
@@ -252,6 +253,14 @@ def main():
                 "📝 Git Commit", use_container_width=True,
             )
 
+        deploy_all_btn = st.button(
+            "🚀 Deploy All from Repo",
+            use_container_width=True,
+            disabled=not conn,
+            type="primary",
+            help="Deploy all semantic views + agent instructions from repo files",
+        )
+
     # ── Handle actions ────────────────────────────────────────────────────
     if save_btn:
         _do_save(modules)
@@ -261,6 +270,8 @@ def main():
         _do_revert(conn, target_type, target, field, assembly)
     if commit_btn:
         _do_git_commit()
+    if deploy_all_btn and conn:
+        _do_deploy_all(conn)
 
     # ── Tabs ──────────────────────────────────────────────────────────────
     tab_edit, tab_preview, tab_diff, tab_live, tab_test = st.tabs(
@@ -297,6 +308,23 @@ def _do_save(modules: list[str]) -> None:
         f"Saved {saved} module(s)" if saved else "No changes to save",
         icon="💾" if saved else "ℹ️",
     )
+
+
+def _do_deploy_all(conn) -> None:
+    """Deploy all semantic views + agent instructions from repo files."""
+    with st.spinner("Deploying all targets from repo…"):
+        results = deploy_all_from_repo(conn)
+    ok = sum(1 for r in results if "✅" in r)
+    fail = sum(1 for r in results if "❌" in r)
+    skip = sum(1 for r in results if "⚠️" in r)
+    for r in results:
+        if "✅" in r:
+            st.toast(r, icon="🚀")
+        elif "❌" in r:
+            st.toast(r, icon="❌")
+        else:
+            st.toast(r, icon="⚠️")
+    st.success(f"Deploy All complete: {ok} succeeded, {fail} failed, {skip} skipped")
 
 
 def _do_deploy(conn, target_type, target, field, assembly) -> None:

@@ -23,6 +23,7 @@ _spec.loader.exec_module(build_deploy)
 
 _indent = build_deploy._indent
 build_semantic_view_yamls = build_deploy.build_semantic_view_yamls
+build_custom_instructions_sql = build_deploy.build_custom_instructions_sql
 build_agent_sql = build_deploy.build_agent_sql
 main = build_deploy.main
 VIEWS = build_deploy.VIEWS
@@ -79,15 +80,15 @@ class TestBuildSemanticViewYamls:
             assert isinstance(data, dict)
             assert "name" in data
 
-    def test_custom_instructions_injected(self, tmp_path: Path):
-        """Built YAMLs should contain custom_instructions from assembly."""
+    def test_no_custom_instructions_in_yaml(self, tmp_path: Path):
+        """Built YAMLs must NOT contain custom_instructions —
+        Snowflake rejects them in YAML payloads."""
         paths = build_semantic_view_yamls(tmp_path)
         for p in paths:
             data = yaml.safe_load(p.read_text(encoding="utf-8"))
-            # All views have at least sql_generation in assembly.yaml
-            assert "custom_instructions" in data, f"{p.name} missing custom_instructions"
-            ci = data["custom_instructions"]
-            assert "sql_generation" in ci or "question_categorization" in ci
+            assert "custom_instructions" not in data, (
+                f"{p.name} should not contain custom_instructions"
+            )
 
     def test_view_names_match(self, tmp_path: Path):
         paths = build_semantic_view_yamls(tmp_path)
@@ -102,6 +103,61 @@ class TestBuildSemanticViewYamls:
         paths2 = build_semantic_view_yamls(tmp_path)
         contents2 = {p.name: p.read_text(encoding="utf-8") for p in paths2}
         assert contents1 == contents2
+
+
+# ===================================================================
+# build_custom_instructions_sql
+# ===================================================================
+
+class TestBuildCustomInstructionsSql:
+    def test_generates_file(self, tmp_path: Path):
+        path = build_custom_instructions_sql(tmp_path)
+        assert path.exists()
+        assert path.name == "set_custom_instructions.sql"
+
+    def test_contains_all_view_blocks(self, tmp_path: Path):
+        path = build_custom_instructions_sql(tmp_path)
+        sql = path.read_text(encoding="utf-8")
+        for view in VIEWS:
+            assert view in sql, f"Missing block for {view}"
+
+    def test_contains_get_ddl(self, tmp_path: Path):
+        path = build_custom_instructions_sql(tmp_path)
+        sql = path.read_text(encoding="utf-8")
+        assert "GET_DDL" in sql
+
+    def test_contains_execute_immediate(self, tmp_path: Path):
+        path = build_custom_instructions_sql(tmp_path)
+        sql = path.read_text(encoding="utf-8")
+        assert "EXECUTE IMMEDIATE" in sql
+
+    def test_contains_ai_sql_generation(self, tmp_path: Path):
+        path = build_custom_instructions_sql(tmp_path)
+        sql = path.read_text(encoding="utf-8")
+        assert "AI_SQL_GENERATION" in sql
+
+    def test_contains_ai_question_categorization(self, tmp_path: Path):
+        path = build_custom_instructions_sql(tmp_path)
+        sql = path.read_text(encoding="utf-8")
+        assert "AI_QUESTION_CATEGORIZATION" in sql
+
+    def test_contains_copy_grants(self, tmp_path: Path):
+        path = build_custom_instructions_sql(tmp_path)
+        sql = path.read_text(encoding="utf-8")
+        assert "COPY GRANTS" in sql
+
+    def test_idempotent(self, tmp_path: Path):
+        path1 = build_custom_instructions_sql(tmp_path)
+        content1 = path1.read_text(encoding="utf-8")
+        path2 = build_custom_instructions_sql(tmp_path)
+        content2 = path2.read_text(encoding="utf-8")
+        assert content1 == content2
+
+    def test_auto_generated_header(self, tmp_path: Path):
+        path = build_custom_instructions_sql(tmp_path)
+        sql = path.read_text(encoding="utf-8")
+        assert "AUTO-GENERATED" in sql
+        assert "build_deploy.py" in sql
 
 
 # ===================================================================
@@ -201,7 +257,7 @@ class TestMain:
         assert out.exists()
         # Should have view YAMLs + agent SQL
         files = list(out.iterdir())
-        assert len(files) == len(VIEWS) + 1  # 3 YAMLs + 1 SQL
+        assert len(files) == len(VIEWS) + 2  # 3 YAMLs + 2 SQL (agent + custom instructions)
 
     def test_custom_out_dir(self, tmp_path: Path, monkeypatch):
         custom = tmp_path / "custom" / "nested"
@@ -212,7 +268,7 @@ class TestMain:
         yaml_files = list(custom.glob("*.yaml"))
         sql_files = list(custom.glob("*.sql"))
         assert len(yaml_files) == len(VIEWS)
-        assert len(sql_files) == 1
+        assert len(sql_files) == 2  # deploy_agent.sql + set_custom_instructions.sql
 
     def test_creates_out_dir(self, tmp_path: Path, monkeypatch):
         """main() should create the output directory if it doesn't exist."""
@@ -234,17 +290,24 @@ class TestRealRepoBuild:
     def test_real_build_produces_valid_artefacts(self, tmp_path: Path):
         paths = build_semantic_view_yamls(tmp_path)
         sql_path = build_agent_sql(tmp_path)
+        ci_sql_path = build_custom_instructions_sql(tmp_path)
 
-        # All view YAMLs valid
+        # All view YAMLs valid and no custom_instructions
         for p in paths:
             data = yaml.safe_load(p.read_text(encoding="utf-8"))
             assert data.get("name"), f"{p.name} should have a name"
+            assert "custom_instructions" not in data, f"{p.name} should not have CI"
 
         # Agent SQL is non-empty and well-formed
         sql = sql_path.read_text(encoding="utf-8")
         assert len(sql) > 100
         assert "ALTER AGENT" in sql
         assert "DESCRIBE AGENT" in sql
+
+        # Custom instructions SQL is non-empty
+        ci_sql = ci_sql_path.read_text(encoding="utf-8")
+        assert len(ci_sql) > 100
+        assert "GET_DDL" in ci_sql
 
     def test_generated_matches_deploy_dir(self, tmp_path: Path):
         """Generated artefacts should match what's already in deploy/."""
@@ -254,6 +317,7 @@ class TestRealRepoBuild:
         # Build fresh
         fresh_paths = build_semantic_view_yamls(tmp_path)
         fresh_sql = build_agent_sql(tmp_path)
+        fresh_ci_sql = build_custom_instructions_sql(tmp_path)
 
         # Compare each YAML
         for fp in fresh_paths:
@@ -272,3 +336,11 @@ class TestRealRepoBuild:
                 fresh_sql.read_text(encoding="utf-8")
                 == existing_sql.read_text(encoding="utf-8")
             ), "deploy_agent.sql differs from deploy/ version"
+
+        # Compare custom instructions SQL
+        existing_ci = deploy_dir / "set_custom_instructions.sql"
+        if existing_ci.exists():
+            assert (
+                fresh_ci_sql.read_text(encoding="utf-8")
+                == existing_ci.read_text(encoding="utf-8")
+            ), "set_custom_instructions.sql differs from deploy/ version"

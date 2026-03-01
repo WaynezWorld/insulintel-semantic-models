@@ -78,7 +78,11 @@ def _load_streamlit_secrets() -> dict:
             return _parse_secrets_minimal(secrets_path)
     with open(secrets_path, "rb") as f:
         data = tomllib.load(f)
-    return data.get("connections", {}).get("snowflake", {})
+    # Try [connections.snowflake] first (Streamlit native), then [snowflake]
+    return (
+        data.get("connections", {}).get("snowflake", {})
+        or data.get("snowflake", {})
+    )
 
 
 def _parse_secrets_minimal(path: Path) -> dict:
@@ -87,7 +91,7 @@ def _parse_secrets_minimal(path: Path) -> dict:
     in_section = False
     for line in path.read_text(encoding="utf-8").splitlines():
         stripped = line.strip()
-        if stripped == "[connections.snowflake]":
+        if stripped in ("[connections.snowflake]", "[snowflake]"):
             in_section = True
             continue
         if stripped.startswith("[") and in_section:
@@ -132,18 +136,24 @@ def snowflake_conn(request: pytest.FixtureRequest):
         database = database or secrets.get("database", "")
         schema = schema or secrets.get("schema", "")
         warehouse = warehouse or secrets.get("warehouse", "")
+        authenticator = secrets.get("authenticator", "oauth")
+    else:
+        authenticator = os.environ.get("SNOWFLAKE_AUTHENTICATOR", "oauth")
 
     if not account:
         pytest.skip("No Snowflake credentials found (set env vars or .streamlit/secrets.toml)")
 
-    conn = snowflake.connector.connect(
+    conn_params = dict(
         account=account,
         user=user,
         token=token,
-        authenticator="oauth",
+        authenticator=authenticator,
         database=database,
-        schema=schema,
         warehouse=warehouse,
     )
+    if schema:
+        conn_params["schema"] = schema
+
+    conn = snowflake.connector.connect(**conn_params)
     yield conn
     conn.close()
