@@ -83,47 +83,31 @@ Two rounds of repo audit have been completed and **merged to `main`**.
 - **Streamlit secrets**: project-level `.streamlit/secrets.toml` (NOT `app/.streamlit/`)
 - **Block YAML dumper**: `app/deployer.py` — `_BlockDumper` forces `|` style for multiline strings
 
-## ⚠️ IN-PROGRESS: Semantic View Deploy Fix (NOT YET MERGED)
+## ✅ MERGED: PR #11 — Semantic View Deploy Fix
 
-### Problem Discovered
-During live testing of the Diff tab, all 8 fields showed **Drifted** — 6 semantic view fields had **0 SF chars** (never deployed), and 2 agent fields had content mismatch. Root cause: `SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML` **rejects** `custom_instructions` in the YAML payload. The old code in `build_deployable_yaml()` was injecting `custom_instructions` into the YAML dict, which Snowflake rejected with `Invalid value: {...} for expected type: STRING`.
+### Problem & Solution
+`SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML` **rejects** `custom_instructions` in YAML. Fixed with 2-step deploy: (1) deploy base YAML, (2) GET_DDL + strip AI clauses + append new ones via CREATE OR REPLACE.
 
-### Changes Made (on working tree — NOT committed/pushed yet)
+### Key Changes
+- `app/deployer.py` — `build_deployable_yaml` strips CI; `deploy_semantic_view` is 2-step; new `deploy_all_from_repo`; `test_with_cortex` fixed (was PARSE_JSON array, now string)
+- `scripts/build_deploy.py` — new `build_custom_instructions_sql` generates `deploy/set_custom_instructions.sql`
+- `scripts/deploy.sql` — Step 6 uses `EXECUTE IMMEDIATE FROM` stage
+- `scripts/deploy_all.py` — new standalone CLI deploy script
+- `tests/conftest.py` — fixed auth: reads `[snowflake]` section, uses `PROGRAMMATIC_ACCESS_TOKEN`
+- Tests: 275 unit + 23 live = **298 total**, all passing
 
-1. **`app/deployer.py`** — Major refactor:
-   - `build_deployable_yaml()` — Now strips `custom_instructions` from YAML instead of injecting them. Signature changed: `custom_instructions` param is now optional/ignored.
-   - `deploy_semantic_view()` — Rewritten as 2-step: (1) deploy base YAML via `SYSTEM$CREATE_SEMANTIC_VIEW_FROM_YAML`, (2) `GET_DDL('SEMANTIC_VIEW', fqn, TRUE)` → strip existing AI clauses → append `AI_SQL_GENERATION` / `AI_QUESTION_CATEGORIZATION` / `COPY GRANTS` → execute `CREATE OR REPLACE`.
-   - `deploy_all_from_repo()` — **New function**. Deploys all 3 semantic views + both agent instruction fields from repo files (uses `assemble_semantic_view_instructions` + `assemble_agent_instructions`). Added imports for these from `semantic_diff.assemble` and `SEMANTIC_VIEW_NAMES` from constants.
+### Persona: ROZ (committed directly to main)
+Agent response instructions persona changed from Ruth → ROZ. Deployed to SF + committed to git.
 
-2. **`app/streamlit_app.py`** — New features:
-   - Imported `deploy_all_from_repo` from deployer
-   - Added "🚀 Deploy All from Repo" button in sidebar (primary type, full-width)
-   - Added `_do_deploy_all(conn)` handler — calls `deploy_all_from_repo`, shows per-target toast + summary
+## ⚠️ UX Issues Found During App Testing (NOT YET FIXED)
 
-3. **`scripts/build_deploy.py`** — Refactored:
-   - `build_semantic_view_yamls()` — No longer injects `custom_instructions` into YAML artefacts
-   - `build_custom_instructions_sql()` — **New function**. Generates `deploy/set_custom_instructions.sql` with `GET_DDL` + `EXECUTE IMMEDIATE` blocks to set AI clauses on each view
-   - `main()` — Now calls `build_custom_instructions_sql()` as an additional step
-
-4. **`scripts/deploy_all.py`** — **New file**. Standalone CLI script to deploy everything from repo to Snowflake. Reads `.streamlit/secrets.toml` for credentials, calls `deploy_all_from_repo()`.
-
-5. **`scripts/deploy.sql`** — Needs update to add step for `set_custom_instructions.sql` (NOT YET DONE)
-
-### What Still Needs To Be Done
-
-1. **Update `scripts/deploy.sql`** ✅ to reference the new `set_custom_instructions.sql` after YAML deployments — uses `EXECUTE IMMEDIATE FROM @stage/.../set_custom_instructions.sql`
-2. **Run `deploy_all.py`** ✅ — 5/5 succeeded: SEM_INSULINTEL ✅, SEM_ACTIVITY ✅, SEM_NHANES ✅, orchestration_instructions ✅, response_instructions ✅. 2-step semantic view deploy confirmed working.
-3. **Update tests** ✅ — `tests/test_deployer.py` rewritten: 25 tests (was 10). `TestBuildDeployableYaml` now asserts CI stripped. New `TestDeploySemanticView` (9 tests: 2-step mock, AI clause injection, escaping, error handling). New `TestDeployAllFromRepo` (3 tests: view count, agent fields, status messages). `tests/test_build_deploy.py` updated: 37 tests (was 28). New `TestBuildCustomInstructionsSql` (9 tests: file gen, view blocks, GET_DDL, EXECUTE IMMEDIATE, AI clauses, COPY GRANTS, idempotency, header). Parity check includes `set_custom_instructions.sql`. `TestMain` counts updated for 5 files (3 YAML + 2 SQL).
-4. **Update `tests/test_live_integration.py`** ✅ — 23 live tests (was 22). `build_deployable_yaml` test no longer passes CI. New `TestDeployAllFromRepo` (1 test: full pipeline → 5 results).
-5. **Regenerate `deploy/` artefacts** ✅ — `python scripts/build_deploy.py` produces 5 files: 3 clean YAMLs (no CI), `set_custom_instructions.sql` (11KB), `deploy_agent.sql`. `validate_repo.py` passes.
-6. **Verify live state** ✅ — All 8 fields populated: SEM_INSULINTEL (sg=3032, qc=315), SEM_ACTIVITY (sg=2543, qc=283), SEM_NHANES (sg=2621, qc=257), Agent orchestration=1910, response=659 chars.
-7. **Run full test suite** ✅ — `pytest tests/ -q` → **275 passed, 23 skipped**. `validate_repo.py` ✅. `build_deploy.py` ✅.
-8. **Create branch, commit, push, PR** ✅ — Branch `fix/semantic-view-deploy`, PR #11 created. 16 files changed, 988 insertions, 401 deletions.
-9. **Fetch live state** ✅ — `get_live_custom_instructions()` confirmed working. All 3 views return populated `sql_generation` + `question_categorization`.
-
-### Test Results
-- `python scripts/deploy_all.py` — 5/5 succeeded ✅: all 3 semantic views + 2 agent fields deployed.
-- `pytest tests/ -q --live` → **298 passed** (275 unit + 23 live). CORTEX.COMPLETE call fixed (was passing array, now passes string-serialized JSON).
+| # | Issue | Proposed Fix |
+|---|-------|-------------|
+| 1 | Preview tab feels redundant | Remove it — Editor already shows content |
+| 2 | Unclear which deploy button to use (per-field vs Deploy All) | Consolidate to one clear deploy action with confirmation |
+| 3 | No workflow guidance after Diff shows "In sync" | Add next-action hints |
+| 4 | Overall flow not self-documenting | Add workflow step indicators (Edit → Save → Deploy → Verify) |
+| 5 | Save collapses YAML block scalars (`\|`) to quoted strings | Fix `_save_instruction_file` to use `_BlockDumper` |
 
 ## Next Phase — Improvements (not bugs)
 
